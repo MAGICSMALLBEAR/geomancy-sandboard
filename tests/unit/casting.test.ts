@@ -18,9 +18,9 @@ describe('tap judgement (C01–C04)', () => {
     const c = beginTap(null, down());
     expect(judgeRelease(c, up({ x: 100 + TAP_MAX_MOVE_PX, time: 1000 + TAP_MAX_MS }))).toBe('tap');
   });
-  test('13 px, overtime and outside releases do not count', () => {
+  test('just past the movement limit, overtime and outside releases do not count', () => {
     const c = beginTap(null, down());
-    expect(judgeRelease(c, up({ x: 113 }))).toBe('moved');
+    expect(judgeRelease(c, up({ x: 100 + TAP_MAX_MOVE_PX + 1 }))).toBe('moved');
     expect(judgeRelease(c, up({ time: 1000 + TAP_MAX_MS + 1 }))).toBe('too-long');
     expect(judgeRelease(c, up({ inside: false }))).toBe('outside');
   });

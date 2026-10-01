@@ -1,9 +1,10 @@
 /**
  * Pure tap judgement for the sand tray (SPEC §6). A dot is only added on a valid pointerup;
  * the DOM layer must never add dots from `click`, `pointerdown` or cancelled gestures.
- * The thresholds are product choices, not geomantic tradition.
+ * The thresholds are product choices, not geomantic tradition. Movement was 12 px until 2026-10-01;
+ * quick repeated taps on phones drift further than that (DECISIONS D21).
  */
-export const TAP_MAX_MOVE_PX = 12;
+export const TAP_MAX_MOVE_PX = 30;
 export const TAP_MAX_MS = 1500;
 
 export type TapCandidate = { pointerId: number; x: number; y: number; startedAt: number; maxMove: number };

@@ -30,5 +30,6 @@
 | D18 | 長問題在起卦頁的顯示 | 最多三行，完整文字在結果頁 | 避免手機上把沙盤擠出畫面 | `app.css` |
 | D19 | 列化約動畫期間的點擊 | 鎖定不計，可略過 | 避免把下一列的點算進剛確認的列 | `DotsCasting.tsx` |
 | D20 | 2026-10-01：測試網址放哪裡、怎麼部署 | GitHub Pages，公開 repo `MAGICSMALLBEAR/geomancy-sandboard`；`npm run deploy` 在本機 build 後把 `dist/` 強制推到 `gh-pages` 分支 | 產品負責人選定 GitHub Pages；免費帳號需公開 repo。目前 gh 登入沒有 `workflow` 權限，先不用 GitHub Actions；`base: './'` 與 hash 路由讓子路徑不需改程式 | `scripts/deploy.mjs`、`package.json` |
+| D21 | 2026-10-01：產品負責人試用時，快速連點常出現「輕點即可：這次沒有算進去」 | 點擊的最大移動距離由 12 CSS px 放寬為 30 px；1500 ms、多指、取消、盤外放開規則不變 | 手機上快速連點時手指常滑動超過 12 px，被判成拖動。30 px 仍能排除明顯的拖曳 | `gesture.ts`、`SPEC.md` §6、`ACCEPTANCE.md` C03／C04；單元測試與 e2e C03／C04 |
 
 新增格式：日期／問題／選擇／理由／受影響檔案／驗收。不要以「代理覺得比較好」無痕替換規則或刪除重要錯誤流程。

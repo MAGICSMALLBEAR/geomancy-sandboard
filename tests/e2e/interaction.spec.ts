@@ -37,7 +37,7 @@ test('C01–C06 點沙手勢：只有合法的放開才算一點', async ({ page
   // C02/C03: none of these may add a dot.
   await pointers(page, [{ type: 'pointerdown' }, { type: 'pointercancel' }]);
   await pointers(page, [{ type: 'pointerdown' }, { type: 'lostpointercapture' }, { type: 'pointerup' }]);
-  await pointers(page, [{ type: 'pointerdown', x: 60 }, { type: 'pointermove', x: 73 }, { type: 'pointerup', x: 73 }]);
+  await pointers(page, [{ type: 'pointerdown', x: 60 }, { type: 'pointermove', x: 91 }, { type: 'pointerup', x: 91 }]);
   await pointers(page, [{ type: 'pointerdown', x: 60 }, { type: 'pointermove', x: 120 }, { type: 'pointerup', x: 60 }]);
   await pointers(page, [{ type: 'pointerdown', y: 60 }, { type: 'pointerup', y: -40 }]);
   await pointers(page, [{ type: 'pointerdown', id: 8, primary: false }, { type: 'pointerup', id: 8, primary: false }]);
@@ -53,8 +53,8 @@ test('C01–C06 點沙手勢：只有合法的放開才算一點', async ({ page
   // A second finger landing and lifting during a valid tap adds nothing extra.
   await pointers(page, [{ type: 'pointerdown', id: 7 }, { type: 'pointerdown', id: 8, primary: false },
     { type: 'pointerup', id: 8, primary: false }, { type: 'pointerup', id: 7 }]);
-  // C04: exactly 12 px still counts.
-  await pointers(page, [{ type: 'pointerdown', x: 60 }, { type: 'pointermove', x: 72 }, { type: 'pointerup', x: 72 }]);
+  // C04: exactly 30 px still counts (12 px before DECISIONS D21).
+  await pointers(page, [{ type: 'pointerdown', x: 60 }, { type: 'pointermove', x: 90 }, { type: 'pointerup', x: 90 }]);
   await confirmRow(page);
   await expect(page.getByText('全部第 3／16 列')).toBeVisible();
   expect(await confirmedCounts(page)).toEqual([1, 2]);

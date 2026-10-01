@@ -115,7 +115,7 @@ flowchart TD
 | 事件／情境 | 決定 |
 |---|---|
 | primary `pointerdown` | 記住 pointerId、起點、時間；只畫暫時壓痕，不加計數 |
-| 該 pointer 的 `pointerup` | 若從起點最大位移 ≤12 CSS px、時間 ≤1500 ms、放開仍在沙盤內，增加 1 點；清除候選 |
+| 該 pointer 的 `pointerup` | 若從起點最大位移 ≤30 CSS px、時間 ≤1500 ms、放開仍在沙盤內，增加 1 點；清除候選 |
 | `pointercancel`、失去 capture、頁面進背景 | 取消尚未提交的壓痕，不增加計數 |
 | 第二隻手指／非主滑鼠鍵／筆的側鍵 | 忽略；不能把多指放開當兩點 |
 | 拖動超過門檻、長按超過門檻、放開在外 | 不算點，沙盤可短顯「輕點即可」；不當作滑沙模式 |
@@ -126,7 +126,7 @@ flowchart TD
 | 尚未確認一列 | 可按「清空本列」重新開始；只作用當前列 |
 | 已確認一列 | 不能修改；要重來必須明確放棄整個草稿 |
 
-12 px、1500 ms 與 4096 是本產品初始互動／防誤觸選擇，不是地占傳統。試用若發現可近用問題可調門檻，但必須版本化操作規格、補測試。採 Pointer Events 與 pointer capture；`touch-action: none` 只套用沙盤，不套整頁。頁面仍有正常捲動區。`pointercancel` 是瀏覽器正常情境，不能當成有效放開。[MDN](https://developer.mozilla.org/en-US/docs/Web/API/Element/pointercancel_event)
+30 px（2026-10-01 由 12 px 放寬，見 DECISIONS D21）、1500 ms 與 4096 是本產品互動／防誤觸選擇，不是地占傳統。試用若發現可近用問題可調門檻，但必須版本化操作規格、補測試。採 Pointer Events 與 pointer capture；`touch-action: none` 只套用沙盤，不套整頁。頁面仍有正常捲動區。`pointercancel` 是瀏覽器正常情境，不能當成有效放開。[MDN](https://developer.mozilla.org/en-US/docs/Web/API/Element/pointercancel_event)
 
 ### 保存與恢復
 
