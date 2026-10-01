@@ -32,7 +32,7 @@ npm run test:unit  # Vitest：手勢、reducer、儲存交易、匯入匯出
 npm run test:e2e   # Playwright：對 production build 跑 P01–P05 等流程
 ```
 
-第一次跑 `test:e2e` 前要先 `npx playwright install chromium`。
+第一次跑 `test:e2e` 前要先 `npx playwright install chromium`。要在 Firefox 與 WebKit 也跑，先 `npx playwright install firefox webkit`，再執行 `PW_ENGINES=1 npx playwright test`（PowerShell：`$env:PW_ENGINES=1; npx playwright test`）。
 
 要在手機上完整試用（含離線與安裝），需要把 `dist/` 放到 HTTPS 網址；用區網 IP 的 http 開啟時沒有離線與安裝功能。真機檢查表見 [docs/DEVICE-CHECKLIST.md](docs/DEVICE-CHECKLIST.md)。
 

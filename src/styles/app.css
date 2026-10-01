@@ -187,6 +187,9 @@ p.notice.is-ok::before { content: "✓ "; }
   padding: 10px 0 calc(10px + env(safe-area-inset-bottom)); background: var(--bg);
 }
 .action-bar p { margin: 0 auto 0 0; }
+/* Very short viewports (400% zoom, tiny windows): a pinned bar would cover most of the screen. Phones,
+   portrait or landscape, stay above this height and keep the pinned bar. */
+@media (max-height: 300px) { .action-bar { position: static; } }
 .mother-review { text-align: center; }
 .mother-review .glyph { margin: 8px auto; display: block; }
 .mothers-strip { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
