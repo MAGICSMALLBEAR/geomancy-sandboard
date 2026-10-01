@@ -1,0 +1,276 @@
+{
+  "format": "geomancy-journal",
+  "schemaVersion": 1,
+  "exportedAt": "2026-09-30T00:00:00.000Z",
+  "records": [
+    {
+      "schemaVersion": 1,
+      "id": "a372a3e9-9b35-4135-b0e7-a97b889be42d",
+      "revision": 0,
+      "createdAt": "2026-09-30T00:00:00.000Z",
+      "updatedAt": "2026-09-30T00:00:00.000Z",
+      "ruleVersion": "western-sequential-v1",
+      "contentVersion": "zh-TW-basic-draft-v1",
+      "question": {
+        "text": "未來三個月，申請這個職位時有哪些值得留意的條件？",
+        "timeframe": "未來三個月",
+        "topic": "work",
+        "targetHouse": 10
+      },
+      "source": {
+        "kind": "dots",
+        "counts": [
+          13,
+          15,
+          12,
+          17,
+          12,
+          13,
+          15,
+          17,
+          12,
+          14,
+          16,
+          13,
+          12,
+          14,
+          13,
+          16
+        ]
+      },
+      "mothers": [
+        [
+          1,
+          1,
+          0,
+          1
+        ],
+        [
+          0,
+          1,
+          1,
+          1
+        ],
+        [
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1,
+          0
+        ]
+      ],
+      "chart": {
+        "M1": [
+          1,
+          1,
+          0,
+          1
+        ],
+        "M2": [
+          0,
+          1,
+          1,
+          1
+        ],
+        "M3": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "M4": [
+          0,
+          0,
+          1,
+          0
+        ],
+        "D1": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "D2": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "D3": [
+          0,
+          1,
+          0,
+          1
+        ],
+        "D4": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "N1": [
+          1,
+          0,
+          1,
+          0
+        ],
+        "N2": [
+          0,
+          0,
+          1,
+          1
+        ],
+        "N3": [
+          0,
+          1,
+          0,
+          0
+        ],
+        "N4": [
+          1,
+          0,
+          1,
+          1
+        ],
+        "RW": [
+          1,
+          0,
+          0,
+          1
+        ],
+        "LW": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "J": [
+          0,
+          1,
+          1,
+          0
+        ],
+        "R": [
+          1,
+          0,
+          1,
+          1
+        ]
+      },
+      "reading": {
+        "ruleVersion": "western-sequential-v1",
+        "contentVersion": "zh-TW-basic-draft-v1",
+        "scope": "basic-symbolic",
+        "reviewStatus": "editorial-draft",
+        "claims": [
+          {
+            "claimId": "overall",
+            "ruleId": "basic.judge-theme.v1",
+            "kind": "symbolic-theme",
+            "title": "整體觀察主題",
+            "text": "裁判為「交會／Conjunctio」，象徵主題包括連結、相遇、結合。可將這些主題帶回問題思考；這一層尚未判斷事情是否成就。",
+            "evidence": [
+              {
+                "nodeId": "J",
+                "figureId": "conjunctio",
+                "dots": "2112"
+              }
+            ],
+            "sourceIds": [
+              "G01",
+              "G04",
+              "E01"
+            ]
+          },
+          {
+            "claimId": "witnesses",
+            "ruleId": "basic.witness-pair.v1",
+            "kind": "symbolic-theme",
+            "title": "兩個證人的並列觀察",
+            "text": "右證人為「囚牢／Carcer」，象徵主題包括限制、固定、邊界。左證人為「道路／Via」，象徵主題包括移動、變化、歷程。先並列觀察，不預設兩者互相抵消，也不固定解作過去與未來。",
+            "evidence": [
+              {
+                "nodeId": "RW",
+                "figureId": "carcer",
+                "dots": "1221"
+              },
+              {
+                "nodeId": "LW",
+                "figureId": "via",
+                "dots": "1111"
+              }
+            ],
+            "sourceIds": [
+              "G01",
+              "E01"
+            ]
+          },
+          {
+            "claimId": "querent",
+            "ruleId": "basic.house-context.v1",
+            "kind": "symbolic-theme",
+            "title": "自己的處境",
+            "text": "第 1 宮用於觀察自己與當下處境。此宮的象為「少年／Puer」，象徵主題包括行動、衝勁、衝突。",
+            "evidence": [
+              {
+                "nodeId": "M1",
+                "figureId": "puer",
+                "dots": "1121",
+                "house": 1
+              }
+            ],
+            "sourceIds": [
+              "G02",
+              "G04",
+              "E01"
+            ]
+          },
+          {
+            "claimId": "topic",
+            "ruleId": "basic.house-context.v1",
+            "kind": "symbolic-theme",
+            "title": "問題所屬範圍",
+            "text": "你選擇第 10 宮：職位與公共角色。此宮的象為「大幸運／Fortuna Major」，象徵主題包括穩定力量、累積、持續。本版尚未計算它與第 1 宮之間的成就關係。",
+            "evidence": [
+              {
+                "nodeId": "N2",
+                "figureId": "fortuna-major",
+                "dots": "2211",
+                "house": 10
+              }
+            ],
+            "sourceIds": [
+              "G02",
+              "G04",
+              "E01"
+            ]
+          },
+          {
+            "claimId": "reflection",
+            "ruleId": "editorial.reflection.v1",
+            "kind": "reflection",
+            "title": "可以記下的下一步",
+            "text": "列出可以接觸的人或資訊，確認彼此需要交換的內容。把實際條件、可用資源與待確認資訊分開記錄。",
+            "evidence": [
+              {
+                "nodeId": "J",
+                "figureId": "conjunctio",
+                "dots": "2112"
+              }
+            ],
+            "sourceIds": [
+              "E01"
+            ]
+          }
+        ]
+      },
+      "notes": "教學測試資料，日期與 ID 固定供重現；不是實際占問。",
+      "integrity": "verified"
+    }
+  ]
+}

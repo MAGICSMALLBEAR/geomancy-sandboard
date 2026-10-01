@@ -1,0 +1,153 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, Navigate, useNavigate, useParams } from 'react-router';
+import type { CastSource } from '../../domain/geomancy.ts';
+import type { Draft } from '../../domain/contracts.ts';
+import { useApp } from '../../app/AppContext.tsx';
+import { setBusy } from '../../app/pwa.ts';
+import { ERROR_TEXT, toAppError, type AppErrorCode } from '../../infrastructure/errors.ts';
+import { METHOD_LABEL } from '../../content/labels.ts';
+import { Dialog } from '../../components/Dialog.tsx';
+import { DotsCasting } from './DotsCasting.tsx';
+import { QuickCasting } from './QuickCasting.tsx';
+import { ManualCasting } from './ManualCasting.tsx';
+import { clearPending, completeCast, keepAsPending } from './pending.ts';
+
+type Load =
+  | { status: 'loading' } | { status: 'missing' } | { status: 'discarded' }
+  | { status: 'error'; code: AppErrorCode }
+  | { status: 'ready'; draft: Draft };
+type Final =
+  | { status: 'idle' } | { status: 'working' }
+  | { status: 'failed'; code: AppErrorCode; draft: Draft; source: CastSource | null };
+
+export function CastPage() {
+  const { id = '' } = useParams();
+  const { repo, logEvent } = useApp();
+  const navigate = useNavigate();
+  const [load, setLoad] = useState<Load>({ status: 'loading' });
+  const [final, setFinal] = useState<Final>({ status: 'idle' });
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const finalizing = useRef(false);
+
+  useEffect(() => {
+    setBusy('cast', true);
+    return () => setBusy('cast', false);
+  }, []);
+
+  /** Saves the locked source and creates the record under the draft's ID. A retry reuses the same input. */
+  const finalize = useCallback(async (draft: Draft, source: CastSource | null) => {
+    if (finalizing.current) return;
+    finalizing.current = true;
+    setFinal({ status: 'working' });
+    try {
+      await completeCast(repo, draft, source);
+      clearPending(draft.id);
+      logEvent('chart_completed', { method: draft.method });
+      // Best effort only; the result is never treated as a guarantee.
+      void navigator.storage?.persist?.().catch(() => undefined);
+      navigate(`/result/${draft.id}`, { replace: true, state: { animate: true } });
+    } catch (error) {
+      const code = toAppError(error).code;
+      setFinal({ status: 'failed', code, draft, source });
+      logEvent('error_shown', { errorCode: code });
+    } finally {
+      finalizing.current = false;
+    }
+  }, [repo, logEvent, navigate]);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        if (await repo.getReading(id)) { if (alive) navigate(`/result/${id}`, { replace: true }); return; }
+        const draft = await repo.loadDraft(id);
+        if (!alive) return;
+        if (!draft) { setLoad({ status: 'missing' }); return; }
+        setLoad({ status: 'ready', draft });
+        // Row 16 (or the quick/manual source) was already stored: finish with that exact input.
+        if (draft.state === 'ready-to-finalize') void finalize(draft, null);
+      } catch (error) {
+        if (alive) setLoad({ status: 'error', code: toAppError(error).code });
+      }
+    })();
+    return () => { alive = false; };
+  }, [id, repo, navigate, finalize]);
+
+  if (load.status === 'loading') return <p role="status">載入中…</p>;
+  if (load.status === 'discarded') return <Navigate to="/new" replace />;
+  if (load.status === 'error') {
+    return <div className="notice is-error" role="alert"><p>無法讀取草稿。{ERROR_TEXT[load.code]}</p><Link to="/">回首頁</Link></div>;
+  }
+  if (load.status === 'missing') {
+    return (
+      <div className="card">
+        <h1>找不到這筆進行中的占問</h1>
+        <p>它可能已經完成、被放棄，或不在這個瀏覽器裡。</p>
+        <p><Link to="/journal">查看日誌</Link>　<Link to="/new">新增占問</Link></p>
+      </div>
+    );
+  }
+
+  const { draft } = load;
+  const discard = async () => {
+    try {
+      await repo.discardDraft(draft.id);
+      setConfirmDiscard(false);
+      setLoad({ status: 'discarded' });
+    } catch (error) {
+      setConfirmDiscard(false);
+      setLoad({ status: 'error', code: toAppError(error).code });
+    }
+  };
+
+  let body;
+  if (final.status === 'working') {
+    body = <p role="status" className="card">正在保存並排盤…</p>;
+  } else if (final.status === 'failed') {
+    const { code, source } = final;
+    body = (
+      <div className="notice is-error" role="alert">
+        <h2>尚未保存</h2>
+        <p>{ERROR_TEXT[code]}這一盤的輸入已固定，重試會使用同一份輸入，不會重新取數。</p>
+        <div className="dialog-actions">
+          <button type="button" className="primary" onClick={() => void finalize(final.draft, source)}>重試保存</button>
+          <button type="button" onClick={() => {
+            try {
+              keepAsPending(final.draft, source);
+              navigate(`/result/${draft.id}`, { replace: true });
+            } catch (error) {
+              setFinal({ ...final, code: toAppError(error).code });
+            }
+          }}>先看暫存結果（未保存）</button>
+        </div>
+      </div>
+    );
+  } else if (draft.method === 'dots') {
+    body = <DotsCasting draft={draft} onReady={ready => void finalize(ready, null)} onGone={() => setLoad({ status: 'missing' })} />;
+  } else if (draft.method === 'quick') {
+    body = <QuickCasting onSource={source => void finalize(draft, source)} />;
+  } else {
+    body = <ManualCasting onSource={source => void finalize(draft, source)} />;
+  }
+
+  return (
+    <div className="cast">
+      <header className="cast-head">
+        <p className="eyebrow">{METHOD_LABEL[draft.method]}</p>
+        <h1 className="question-text">{draft.question.text}</h1>
+        <p className="cast-links">
+          <Link to="/">暫停，回首頁</Link>
+          <button type="button" className="link-button" onClick={() => setConfirmDiscard(true)}>放棄這筆草稿</button>
+        </p>
+      </header>
+      {body}
+      <Dialog open={confirmDiscard} title="放棄這筆草稿？" onClose={() => setConfirmDiscard(false)}>
+        <p>已確認的列與這個問題都會刪除，無法復原。</p>
+        <div className="dialog-actions">
+          <button type="button" className="primary" onClick={() => setConfirmDiscard(false)}>保留草稿</button>
+          <button type="button" className="danger" onClick={() => void discard()}>放棄草稿</button>
+        </div>
+      </Dialog>
+    </div>
+  );
+}

@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: 16 named patterns are a bijection; display values are not bit values
+ok 1 - 16 named patterns are a bijection; display values are not bit values
+  ---
+  duration_ms: 2.9458
+  type: 'test'
+  ...
+# Subtest: teaching fixture matches every node and fixed house allocation
+ok 2 - teaching fixture matches every node and fixed house allocation
+  ---
+  duration_ms: 0.5159
+  type: 'test'
+  ...
+# Subtest: invalid counts, sparse arrays, malformed figures and houses fail explicitly
+ok 3 - invalid counts, sparse arrays, malformed figures and houses fail explicitly
+  ---
+  duration_ms: 0.5762
+  type: 'test'
+  ...
+# Subtest: chart construction neither changes input nor aliases input tuples
+ok 4 - chart construction neither changes input nor aliases input tuples
+  ---
+  duration_ms: 0.3707
+  type: 'test'
+  ...
+# Subtest: all 65,536 ordered mother combinations match independent arithmetic and invariants
+ok 5 - all 65,536 ordered mother combinations match independent arithmetic and invariants
+  ---
+  duration_ms: 1197.9132
+  type: 'test'
+  ...
+# Subtest: XOR identity, self cancellation and transpose properties cover all figures
+ok 6 - XOR identity, self cancellation and transpose properties cover all figures
+  ---
+  duration_ms: 0.257
+  type: 'test'
+  ...
+# Subtest: all quick byte pairs map bijectively to mother sets with documented bit order
+ok 7 - all quick byte pairs map bijectively to mother sets with documented bit order
+  ---
+  duration_ms: 131.0573
+  type: 'test'
+  ...
+# Subtest: random adapter calls provider once; sources replay without calling RNG
+ok 8 - random adapter calls provider once; sources replay without calling RNG
+  ---
+  duration_ms: 0.525
+  type: 'test'
+  ...
+# Subtest: question topic and house must agree; required fields cannot silently default
+ok 9 - question topic and house must agree; required fields cannot silently default
+  ---
+  duration_ms: 0.369
+  type: 'test'
+  ...
+# Subtest: readings retain evidence, deterministic drafts and optional topic house
+ok 10 - readings retain evidence, deterministic drafts and optional topic house
+  ---
+  duration_ms: 0.9655
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1488.4105
