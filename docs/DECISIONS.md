@@ -29,5 +29,6 @@
 | D17 | 首次安裝 worker 是否接管頁面 | `clientsClaim: true`、不 `skipWaiting` | 首次載入不需重整就受控；更新仍等使用者同意 | `vite.config.ts`；e2e P05 |
 | D18 | 長問題在起卦頁的顯示 | 最多三行，完整文字在結果頁 | 避免手機上把沙盤擠出畫面 | `app.css` |
 | D19 | 列化約動畫期間的點擊 | 鎖定不計，可略過 | 避免把下一列的點算進剛確認的列 | `DotsCasting.tsx` |
+| D20 | 2026-10-01：測試網址放哪裡、怎麼部署 | GitHub Pages，公開 repo `MAGICSMALLBEAR/geomancy-sandboard`；`npm run deploy` 在本機 build 後把 `dist/` 強制推到 `gh-pages` 分支 | 產品負責人選定 GitHub Pages；免費帳號需公開 repo。目前 gh 登入沒有 `workflow` 權限，先不用 GitHub Actions；`base: './'` 與 hash 路由讓子路徑不需改程式 | `scripts/deploy.mjs`、`package.json` |
 
 新增格式：日期／問題／選擇／理由／受影響檔案／驗收。不要以「代理覺得比較好」無痕替換規則或刪除重要錯誤流程。

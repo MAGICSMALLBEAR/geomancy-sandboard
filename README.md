@@ -19,6 +19,7 @@ npm install
 npm run dev        # 開發伺服器 http://localhost:5173
 npm run build      # 型別檢查後產生 dist/
 npm run preview    # 預覽 production build http://localhost:4173；離線與安裝用這個測
+npm run deploy     # build 後發布到 GitHub Pages（gh-pages 分支），需先 commit
 ```
 
 檢查命令：

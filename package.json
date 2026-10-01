@@ -16,6 +16,7 @@
     "test:e2e": "playwright test",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
+    "deploy": "npm run build && node scripts/deploy.mjs",
     "icons": "node scripts/make-icons.mjs",
     "demo": "node tests/demo.mjs"
   },
