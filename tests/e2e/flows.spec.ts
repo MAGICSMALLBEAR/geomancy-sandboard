@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Browser, type BrowserContext, type TestInfo } from '@playwright/test';
+import { spawn } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { castRows, expectFixtureChart, fillManual, fixture, idbAll, startCast, tapTray } from './helpers.ts';
 
@@ -271,15 +272,16 @@ test('P04 資料往返：手動四母→筆記→匯出→乾淨瀏覽器匯入�
   await context.close();
 });
 
-test('P05 離線：首次快取後斷網、關閉重開，仍可起卦、閱讀、寫筆記與匯出', async ({ browser }, testInfo) => {
-  const context = await browser.newContext({ baseURL: testInfo.project.use.baseURL });
+/** Everything P05 checks once the network is gone; `goOffline` must leave `page` controlled by the worker. */
+async function offlineFlow(baseURL: string, browser: Browser, testInfo: TestInfo, goOffline: (context: BrowserContext) => Promise<void>) {
+  const context = await browser.newContext({ baseURL });
   let page = await context.newPage();
   await page.goto('./#/settings');
   await expect(page.getByText('已可離線使用')).toBeVisible({ timeout: 30_000 });
   await page.evaluate(() => navigator.serviceWorker.ready);
   await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
 
-  await context.setOffline(true);
+  await goOffline(context);
   await page.close();
   page = await context.newPage();
   await page.goto('./');
@@ -312,6 +314,32 @@ test('P05 離線：首次快取後斷網、關閉重開，仍可起卦、閱讀�
 
   await page.reload();
   await expect(page.locator('.journal-item')).toHaveCount(1);
-  await context.setOffline(false);
   await context.close();
+}
+
+test('P05 離線：首次快取後斷網、關閉重開，仍可起卦、閱讀、寫筆記與匯出', async ({ browser, browserName }, testInfo) => {
+  // Playwright's offline emulation makes WebKit fail every navigation, even ones the worker serves
+  // (checked by hand: the same page opens once the server is really stopped). WebKit uses P05b.
+  test.skip(browserName === 'webkit', 'WebKit 改由 P05b 以真正關閉伺服器驗證');
+  await offlineFlow(testInfo.project.use.baseURL!, browser, testInfo, context => context.setOffline(true));
+});
+
+test('P05b 離線（伺服器真的關閉）：WebKit 的離線流程', async ({ browser, browserName }, testInfo) => {
+  test.skip(browserName !== 'webkit', '其他引擎以 P05 的斷網模擬驗證');
+  // A private preview server for this test only, so stopping it does not affect other workers.
+  const port = 4190 + testInfo.workerIndex;
+  const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', 'preview', '--port', String(port), '--strictPort'], { stdio: 'pipe' });
+  try {
+    await new Promise<void>((resolve, reject) => {
+      server.stdout!.on('data', (chunk: Buffer) => { if (String(chunk).includes(String(port))) resolve(); });
+      server.once('exit', code => reject(new Error(`vite preview exited (${code})`)));
+    });
+    await offlineFlow(`http://localhost:${port}/`, browser, testInfo, async () => {
+      const exited = new Promise(resolve => server.once('exit', resolve));
+      server.kill();
+      await exited;
+    });
+  } finally {
+    server.kill();
+  }
 });

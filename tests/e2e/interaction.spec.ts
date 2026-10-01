@@ -295,7 +295,8 @@ for (const width of [360, 768, 1440]) {
   test(`版面 ${width}px：主要頁面不橫向溢出，手機用頁籤切換結果`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: width === 360 ? 740 : 900 });
     const shot = async (name: string) => {
-      await page.screenshot({ path: `docs/evidence/${name}-${width}.png`, fullPage: true });
+      // Evidence screenshots come from Chromium only, so other engines do not overwrite them.
+      if (testInfo.project.name === 'chromium') await page.screenshot({ path: `docs/evidence/${name}-${width}.png`, fullPage: true });
       await noHorizontalOverflow(page);
     };
     await page.goto('./');

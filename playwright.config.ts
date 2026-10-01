@@ -16,6 +16,14 @@ export default defineConfig({
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
     // Installed Microsoft Edge; opt in with PW_EDGE=1 so machines without Edge still pass.
     ...(process.env.PW_EDGE ? [{ name: 'msedge', use: { ...devices['Desktop Edge'], channel: 'msedge' } }] : []),
+    // Other engines; opt in with PW_ENGINES=1 after `npx playwright install firefox webkit`.
+    // WebKit here is Playwright's Windows build: close to Safari's engine, not a substitute for a real iPhone.
+    ...(process.env.PW_ENGINES
+      ? [
+          { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+          { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+        ]
+      : []),
   ],
   webServer: {
     command: 'npm run build && npm run preview',
