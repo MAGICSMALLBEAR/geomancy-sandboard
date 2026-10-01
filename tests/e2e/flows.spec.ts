@@ -32,7 +32,7 @@ test('P01 新手點沙：fixture 的十六列得到完整正確的盤、依據�
   await page.locator('.node-list > li').first().getByRole('button').click();
   await expect(page.locator('.node-list > li').first()).toContainText('點了 13 下，奇數 → 一點');
 
-  await page.getByRole('button', { name: '十二宮' }).click();
+  await page.getByRole('button', { name: '十二宮', exact: true }).click();
   const tenth = page.locator('.house-card', { hasText: '第 10 宮' });
   await expect(tenth).toContainText('大幸運／Fortuna Major');
   await expect(tenth).toContainText('第二姪象（N2）');
@@ -137,8 +137,8 @@ test('P03 快速與保存失敗：連按只取樣一次，重試保存同一組�
   for (let i = 0; i < 4; i++) await expect(rows.nth(i)).toContainText(`圖式 ${QUICK_MOTHERS[i]}`);
   await page.goto('./#/journal');
   await page.locator('.journal-item').getByRole('link').click();
-  await page.getByRole('button', { name: '十二宮' }).click();
-  await page.getByRole('button', { name: '盾盤' }).click();
+  await page.getByRole('button', { name: '十二宮', exact: true }).click();
+  await page.getByRole('button', { name: '盾盤', exact: true }).click();
   await page.getByLabel(/顯示調和者/).check();
   expect(await rngCalls(page)).toBe(0);
   expect(await idbAll(page, 'readings')).toEqual(before);

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import type { CastSource, Chart, NodeId } from '../domain/geomancy.ts';
 import { HOUSES } from '../domain/catalog.ts';
 import type { Claim, Question, Reading } from '../domain/reading.ts';
@@ -7,6 +7,8 @@ import { sourceById } from '../content/sources.ts';
 import { fromDots } from '../domain/geomancy.ts';
 import { FigureGlyph } from './FigureGlyph.tsx';
 import { ChartPanel } from './ChartPanel.tsx';
+import { AdvancedReading } from './AdvancedReading.tsx';
+import { buildAdvancedReading } from '../domain/advanced.ts';
 
 type Props = {
   question: Question;
@@ -82,6 +84,13 @@ export function ResultView({ question, dateLabel, source, chart, reading, animat
   const [tab, setTab] = useState<'reading' | 'chart' | 'notes'>('reading');
   const [selected, setSelected] = useState<NodeId | null>(null);
   const showNode = (node: NodeId) => { setSelected(node); setTab('chart'); };
+  const advanced = useMemo(() => buildAdvancedReading(chart, question), [chart, question]);
+  const [pathShown, setPathShown] = useState(false);
+  const togglePath = () => {
+    const next = !pathShown;
+    setPathShown(next);
+    if (next) setTab('chart');
+  };
 
   return (
     <div className="result">
@@ -96,9 +105,9 @@ export function ResultView({ question, dateLabel, source, chart, reading, animat
         </p>
         <details className="scope-note">
           <summary>基礎象徵解讀・內容草稿</summary>
-          <p>這一版只說明裁判、兩個證人、第 1 宮與你選的問題宮各自的象徵主題，並附上反思提示。
-            尚未包含成就關係、相位等技法，也不是完整的傳統斷事，因此不會告訴你事情「會不會成」。
-            中文象義是本產品的編輯草稿，尚未經地占專家逐條審校。重要決定仍需要實際資訊。</p>
+          <p>基礎解讀說明裁判、兩個證人、第 1 宮與你選的問題宮各自的象徵主題，並附上反思提示。
+            下方的進階解讀另外依傳統技法計算成事關係、點之道、證人與裁判，以及十二宮逐宮；它是象徵性的觀察，不是預測。
+            尚未包含相位等其他技法。中文文字是本產品的編輯草稿，尚未經地占專家逐條審校。重要決定仍需要實際資訊。</p>
           <p className="muted">規則版本 {reading.ruleVersion}・內容版本 {reading.contentVersion}</p>
         </details>
       </header>
@@ -113,7 +122,7 @@ export function ResultView({ question, dateLabel, source, chart, reading, animat
         <div className={`result-pane pane-chart${tab === 'chart' ? ' is-active' : ''}`}>
           <h2>盤面</h2>
           <ChartPanel chart={chart} source={source} targetHouse={question.targetHouse} selected={selected}
-            onSelect={setSelected} animate={animate} onSkipAnimation={onSkipAnimation} />
+            onSelect={setSelected} animate={animate} onSkipAnimation={onSkipAnimation} path={pathShown ? advanced.way.nodes : undefined} />
         </div>
         <div className="result-side">
           <div className={`result-pane pane-reading${tab === 'reading' ? ' is-active' : ''}`}>
@@ -121,6 +130,7 @@ export function ResultView({ question, dateLabel, source, chart, reading, animat
             {reading.claims.map(claim => (
               <ClaimCard key={claim.claimId} claim={claim} onShowNode={showNode} onEvidenceOpened={onEvidenceOpened} />
             ))}
+            <AdvancedReading advanced={advanced} onShowNode={showNode} pathShown={pathShown} onTogglePath={togglePath} />
           </div>
           {notes && (
             <div className={`result-pane pane-notes${tab === 'notes' ? ' is-active' : ''}`}>

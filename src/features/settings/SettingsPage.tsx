@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'reac
 import { Link } from 'react-router';
 import { RULE_VERSION } from '../../domain/geomancy.ts';
 import { CONTENT_VERSION } from '../../domain/catalog.ts';
+import { ADVANCED_VERSION } from '../../domain/advanced.ts';
 import { useApp } from '../../app/AppContext.tsx';
 import { isIos, promptInstall, usePwa } from '../../app/pwa.ts';
 import { ERROR_TEXT, toAppError } from '../../infrastructure/errors.ts';
@@ -12,7 +13,7 @@ import { THEMES, type ArchiveEntry, type MotionSetting, type ThemeSetting } from
 import { formatDate } from '../../content/labels.ts';
 import { Dialog } from '../../components/Dialog.tsx';
 
-const APP_VERSION = '0.3.0';
+const APP_VERSION = '0.4.0';
 const MOTION_LABEL: Record<MotionSetting, string> = { system: '跟隨系統設定', reduce: '減少動態效果', full: '完整動態效果' };
 const THEME_LABEL: Record<ThemeSetting, { name: string; help: string }> = {
   sand: { name: '安靜沙盤', help: '自然沙色、立體沙面與凹痕，柔和安靜。' },
@@ -264,7 +265,7 @@ export function SettingsPage() {
 
       <section className="card">
         <h2>版本與來源</h2>
-        <p>App {APP_VERSION}（測試版）・規則 {RULE_VERSION}・內容 {CONTENT_VERSION}（編輯草稿，未經專家審校）</p>
+        <p>App {APP_VERSION}（測試版）・規則 {RULE_VERSION}・內容 {CONTENT_VERSION}、進階 {ADVANCED_VERSION}（編輯草稿，未經專家審校）</p>
         <p>儲存方式：{repo.mode === 'persistent' ? '這個瀏覽器的本機資料庫' : '暫存模式（僅限這個分頁）'}。沒有帳號、後端或第三方追蹤。</p>
         <p><Link to="/learn">規則與來源</Link></p>
       </section>

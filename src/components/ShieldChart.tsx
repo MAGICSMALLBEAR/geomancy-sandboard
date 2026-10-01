@@ -20,9 +20,11 @@ type Props = {
   /** Decorative build-up only; the chart is already fixed and stored. */
   animate: boolean;
   markers?: Partial<Record<NodeId, string>>;
+  /** Nodes on the Way of the Points, highlighted with the lines between them. */
+  path?: readonly NodeId[];
 };
 
-export function ShieldChart({ chart, showReconciler, selected, onSelect, animate, markers = {} }: Props) {
+export function ShieldChart({ chart, showReconciler, selected, onSelect, animate, markers = {}, path = [] }: Props) {
   const scroller = useRef<HTMLDivElement>(null);
   // On narrow screens start at the right edge, where the first mother is.
   useEffect(() => {
@@ -46,8 +48,9 @@ export function ShieldChart({ chart, showReconciler, selected, onSelect, animate
           const a = POSITION[parent], b = POSITION[child];
           const active = selected === child;
           const long = child === 'R' && parent === 'M1';
+          const onPath = path.includes(child) && path.includes(parent);
           return (
-            <path key={`${parent}-${child}`} className={`shield-line${active ? ' is-active' : ''}${long ? ' is-long' : ''}`}
+            <path key={`${parent}-${child}`} className={`shield-line${active ? ' is-active' : ''}${long ? ' is-long' : ''}${onPath ? ' is-path' : ''}`}
               d={long
                 ? `M ${a.x} ${a.y + H / 2} L ${a.x} ${b.y} L ${b.x + W / 2} ${b.y}`
                 : `M ${a.x} ${a.y + H / 2} L ${b.x} ${b.y - H / 2}`} />
@@ -56,12 +59,12 @@ export function ShieldChart({ chart, showReconciler, selected, onSelect, animate
         {nodes.map(node => {
           const { x, y } = POSITION[node], figure = chart[node], info = figureOf(figure);
           const isSelected = selected === node, isParent = parentsOfSelected.includes(node);
-          const marker = markers[node];
+          const marker = markers[node], onPath = path.includes(node);
           return (
             <g key={node} transform={`translate(${x - W / 2} ${y - H / 2})`} role="button" tabIndex={0}
-              className={`shield-node${isSelected ? ' is-selected' : ''}${isParent ? ' is-parent' : ''}`}
+              className={`shield-node${isSelected ? ' is-selected' : ''}${isParent ? ' is-parent' : ''}${onPath ? ' is-path' : ''}`}
               style={animate ? { animationDelay: `${NODES.indexOf(node) * 170}ms` } : undefined}
-              aria-label={`${NODE_LABEL[node]}：${figureAria(figure)}${marker ? `，${marker}` : ''}`}
+              aria-label={`${NODE_LABEL[node]}：${figureAria(figure)}${marker ? `，${marker}` : ''}${onPath ? '，點之道經過' : ''}`}
               aria-pressed={isSelected}
               onClick={() => onSelect(node)}
               onKeyDown={event => {

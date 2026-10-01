@@ -35,7 +35,7 @@
 
 逐行奇偶、四女轉置與後續合成可以完全確定地實作。本包另以顯示點數的加法作獨立測試算法，枚舉所有四母組合。這降低運算錯誤，但不代替對歷史內容或應用判讀的審核。
 
-成就、相位、點之道、轉宮等有更高的解讀複雜度；例如 occupation、conjunction、mutation、translation 不能只靠看到某個單象就判成功。MVP 不實作、不暗示已有此能力；如果試用確認需要，再選一套明確來源與專家案例補入。[G06](https://digitalambler.com/2014/06/05/more-about-geomantic-perfection/)
+成就、相位、點之道、轉宮等有更高的解讀複雜度；例如 occupation、conjunction、mutation、translation 不能只靠看到某個單象就判成功。2026-10-01 起依產品負責人決定，以 G06 的四種成事定義與 G07 的點之道規則實作「進階解讀（草稿）」，見 DECISIONS D24；仍需專家案例與審校。[G06](https://digitalambler.com/2014/06/05/more-about-geomantic-perfection/)
 
 ## 4. 來源索引：供程式 claim.sourceIds 對照
 
@@ -48,7 +48,8 @@
 | G03 | [Geomancy 歷史刊文 PDF](https://www.100thmonkeypress.com/biblio/acrowley/periodicals/geomancy/geomancy.pdf) | 1918 刊文影本的十六象圖式；前輪已看圖核對，不整篇搬入 App |
 | G04 | [Elizabeth Bennett／Princeton：Medieval Geomancy 步驟](https://www.princeton.edu/~ezb/geomancy/geostep.html) | 地占步驟與解讀背景；不是本案中文模板原文 |
 | G05 | [Elizabeth Bennett／Princeton：The Geomantic Figures](https://www.princeton.edu/~ezb/geomancy/figures.html) | 圖式與名稱歷史變體提醒 |
-| G06 | [The Digital Ambler：More About Geomantic Perfection](https://digitalambler.com/2014/06/05/more-about-geomantic-perfection/) | 未來進階技法的研究入口，非目前引擎 |
+| G06 | [The Digital Ambler：More About Geomantic Perfection](https://digitalambler.com/2014/06/05/more-about-geomantic-perfection/) | 四種成事關係與不成事的定義；進階解讀依此計算（D24） |
+| G07 | [The Digital Ambler：Via Puncti](https://digitalambler.com/2012/12/18/de-geomanteia-via-puncti-follow-the-yellow-brick-road/) | 點之道：從裁判火行往上追溯到母象或女象；一點時唯一路徑，兩點時可能分岔或中斷（D24） |
 | E01 | 本包 `src/domain/catalog.ts`、`reading.ts` | 本案原創中文編輯草稿與反思提示；reviewStatus 為 editorial-draft，未經外部專家逐條審校 |
 
 來源連結是引用與查核用途，不能推論對方授權本產品使用整套語料。產品內摘要與反思文字為新寫，不複製競品付費內容；現代網站與程式碼是否可商用，仍以其實際授權為準。

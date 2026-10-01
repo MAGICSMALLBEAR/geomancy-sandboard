@@ -13,6 +13,8 @@ type Props = {
   onSelect: (node: NodeId | null) => void;
   animate: boolean;
   onSkipAnimation: () => void;
+  /** Way of the Points to highlight on the shield, if the reader asked for it. */
+  path?: readonly NodeId[];
 };
 
 /** How one position was produced, in words. Mothers show their real origin, never invented dot counts. */
@@ -61,7 +63,7 @@ function Derivation({ node, chart, source }: { node: NodeId; chart: Chart; sourc
   );
 }
 
-export function ChartPanel({ chart, source, targetHouse, selected, onSelect, animate, onSkipAnimation }: Props) {
+export function ChartPanel({ chart, source, targetHouse, selected, onSelect, animate, onSkipAnimation, path }: Props) {
   const [view, setView] = useState<'shield' | 'houses'>('shield');
   const [showReconciler, setShowReconciler] = useState(false);
   const detailRefs = useRef<Partial<Record<NodeId, HTMLLIElement | null>>>({});
@@ -88,7 +90,7 @@ export function ChartPanel({ chart, source, targetHouse, selected, onSelect, ani
           顯示調和者（第十六象；部分傳統不使用）
         </label>
         {animate && <button type="button" className="link-button" onClick={onSkipAnimation}>略過成盤動畫</button>}
-        <ShieldChart chart={chart} showReconciler={showReconciler} selected={selected} onSelect={selectFromChart}
+        <ShieldChart path={path} chart={chart} showReconciler={showReconciler} selected={selected} onSelect={selectFromChart}
           animate={animate} markers={markers} />
         <p className="hint scroll-hint">盤面較寬，可左右捲動；也可以用下面的列表查看每個位置。</p>
 

@@ -208,8 +208,8 @@ test('R01/R03 一般反思沒有問題宮；切換顯示不改資料；S07 刪�
   const before = await idbAll(page, 'readings');
   await page.getByLabel(/顯示調和者/).check();
   await expect(page.locator('.node-list > li')).toHaveCount(16);
-  await page.getByRole('button', { name: '十二宮' }).click();
-  await page.getByRole('button', { name: '盾盤' }).click();
+  await page.getByRole('button', { name: '十二宮', exact: true }).click();
+  await page.getByRole('button', { name: '盾盤', exact: true }).click();
   await page.locator('.shield-node').nth(14).click();
   await expect(page.locator('.node-list > li.is-open')).toContainText('右證人（RW）＋左證人（LW）逐行合成');
   await page.goto('./#/settings');

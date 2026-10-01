@@ -1,8 +1,8 @@
 # 目前實際狀態
 
-最後更新：2026-10-01 · App 版本 0.3.0（測試版）
+最後更新：2026-10-01 · App 版本 0.4.0（測試版）
 
-**M0–M5 已實作，可在電腦瀏覽器從提問走到回顧記錄。自動測試全部通過，含 Chromium、Edge、Firefox、Playwright WebKit 與模擬縮放。真機（iPhone／Android）、macOS Safari、讀屏尚未由人實測；M6 使用者試用與專家審校尚未開始。**
+**M0–M5 已實作，可在電腦瀏覽器從提問走到回顧記錄。0.4.0 依產品負責人試用回饋加入：點沙判定放寬、自動點沙、三種外觀主題、進階解讀（成事關係、點之道、證人與裁判、十二宮逐宮，草稿）。自動測試全部通過，含 Chromium、Edge、Firefox、Playwright WebKit 與模擬縮放。真機（iPhone／Android）、macOS Safari、讀屏尚未由人實測；M6 使用者試用與專家審校尚未開始。**
 
 ## 已完成（實際做過）
 
@@ -13,6 +13,12 @@
 - [x] **M4** Manifest、自製圖示、precache、提示式更新（起卦中與筆記未保存時不提示）、安裝按鈕與 iOS 說明、360／768／1440 px 版面。
 - [x] **M5** 結果頁 3 題回饋、本機試用事件（預設關閉）、回饋匯出與清除、文件更新。
 - [x] **補測（2026-10-01）** Firefox／WebKit e2e；更新提示、資料庫被其他分頁升級、儲存空間不足、本機記錄純文字檢視、真實瀏覽器匯入回復；200%／400%／文字 200% 縮放。過程中修了兩個問題，見下方「本輪修正」。
+- [x] **0.4.0（2026-10-01，產品負責人試用回饋）**
+  - 點沙「輕點」的移動門檻 12 → 30 px（D21）：快速連點不再常被判成拖動。
+  - 第四種起卦方式「自動點沙（裝置亂數）」（D22）：按一次由裝置亂數決定 16 列各 5–20 粒，先保存再播放落沙動畫，可略過。
+  - 外觀主題（D23）：安靜沙盤（預設）、古典手稿、現代儀式（深色），設定頁切換；只用系統字型。
+  - 進階解讀（D24）：成事關係（同象／接合／轉移／傳遞／不成事）、點之道（可在盾盤標出路徑）、證人與裁判、十二宮逐宮。由盤面即時計算、不存入記錄，文字是未審校草稿。
+  - 風格樣板（設計稿）：https://claude.ai/artifact/PK8qZ81vo45c4B7RDBojGy
 
 ## 測試網址
 
@@ -31,11 +37,11 @@
 | `npm run typecheck` | 通過，0 錯誤 |
 | `npm run lint` | 通過，0 錯誤 0 警告 |
 | `npm run test:core` | 10 通過／0 失敗；輸出在 [core-test-report.tap](docs/core-test-report.tap) |
-| `npm run test:unit` | 3 個檔案、46 項通過（手勢判定、點沙 reducer、Repository 在 fake-indexeddb 與記憶體兩種實作、匯入匯出邊界） |
-| `npm run build` | 成功；入口 JS gzip 135.16 KiB（目標 ≤250），precache 14 項 |
-| `npm run test:e2e` | 28 通過、1 略過（P05b 只在 WebKit 跑），Playwright Chromium 153.0.8010.12，對 production build（`vite preview`）執行 |
-| `PW_EDGE=1 npx playwright test --project=msedge` | 28 通過、1 略過，本機安裝的 Microsoft Edge 154.0.4258.48 |
-| `PW_ENGINES=1 npx playwright test` | 84 通過、3 略過：Chromium、Firefox 155.0、WebKit 26.6（Playwright 的 Windows 版，不等於 macOS／iOS Safari）。需先 `npx playwright install firefox webkit` |
+| `npm run test:unit` | 4 個檔案、62 項通過（手勢判定、點沙 reducer、自動點沙來源、Repository 在 fake-indexeddb 與記憶體兩種實作、匯入匯出邊界、成事關係各種情況、65,536 盤點之道性質） |
+| `npm run build` | 成功；入口 JS gzip 141.86 KiB（目標 ≤250），precache 14 項 |
+| `npm run test:e2e` | 38 通過、1 略過（P05b 只在 WebKit 跑），Playwright Chromium 153.0.8010.12，對 production build（`vite preview`）執行 |
+| `PW_EDGE=1 npx playwright test --project=msedge` | 38 通過、1 略過，本機安裝的 Microsoft Edge 154.0.4258.48 |
+| `PW_ENGINES=1 npx playwright test` | 114 通過、3 略過：Chromium、Firefox 155.0、WebKit 26.6（Playwright 的 Windows 版，不等於 macOS／iOS Safari）。需先 `npx playwright install firefox webkit` |
 
 端到端涵蓋（對應 [ACCEPTANCE](docs/ACCEPTANCE.md)）：
 
@@ -66,6 +72,12 @@
 - [ ] M6：5–8 位使用者試用、地占專家逐條審校中文解讀。
 
 ## 已知限制與問題
+
+- 進階解讀的文字（成事、點之道、證人與裁判、十二宮逐宮）是本產品原創草稿，十二宮逐宮是「象在宮中的傾向 × 宮位問題」的組合式文字，全部未經地占專家審校。成事規則依 G06、點之道依 G07；Greer 原書未能直接核對。宮位環狀相鄰、摘要排序是本產品的明確選擇（D24）。
+- 進階解讀不存入記錄，規則或文字更新後，舊記錄重開會看到新版本的進階解讀（基礎解讀仍是當時的快照）。
+- 古典手稿主題使用系統楷體：Apple 裝置有楷體、Windows 用標楷體；Android 通常沒有楷體，會顯示一般襯線字。
+- 舊版 App（0.3.x）不認得自動點沙的來源，匯入含自動點沙的備份會判為格式不正確。
+- 三個引擎同時跑完整 e2e 時，偶爾有個別測試因負載超時（本輪見過 S05、P01 各一次），單獨重跑三次都通過；完整重跑全部通過。
 
 - 解讀是 `basic-symbolic`／`editorial-draft`：沒有成就、相位、點之道，不判斷成敗；文案未經專家審校。
 - 列化約動畫播放的約 0.8 秒內沙盤鎖定，這段時間的點擊不計（可按「略過」）。

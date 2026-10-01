@@ -1,6 +1,6 @@
 # 地占沙盤
 
-版本 0.3.0（測試版） · 2026-10-01 · 繁體中文 · React＋TypeScript＋Vite 的本機優先 PWA
+版本 0.4.0（測試版） · 2026-10-01 · 繁體中文 · React＋TypeScript＋Vite 的本機優先 PWA
 
 **第一版 App 已可在電腦瀏覽器試用：提問、三種起卦、盾盤與十二宮、附依據的基礎象徵解讀、日誌、JSON 備份匯入、離線。** 自動測試全部通過；iPhone／Android 真機、Safari 與讀屏尚未實測，也還沒有公開網址。實際狀態以 [STATUS.md](STATUS.md) 為準。
 

@@ -366,3 +366,15 @@ details[open] > summary::before { content: "▾ "; }
 [data-theme="ritual"] .shield-node.is-selected rect { fill: var(--accent-soft); }
 [data-theme="ritual"] .row-progress li.is-current { box-shadow: 0 0 8px rgba(214, 181, 110, 0.5); }
 [data-theme="ritual"] .sand-tray { border-color: var(--line); }
+
+/* Way of the Points on the shield (advanced reading). */
+.shield-line.is-path { stroke: var(--accent); stroke-width: 5; stroke-dasharray: none; }
+.shield-node.is-path rect { stroke: var(--accent); stroke-width: 4; }
+.advanced-reading { margin-top: 8px; }
+.advanced-reading > h2 { margin-top: 24px; }
+.perfection-hits { padding-left: 1.2em; }
+.perfection-hits li { margin-bottom: 8px; }
+.house-readings { list-style: none; padding: 0; display: grid; gap: 8px; }
+.house-readings li { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); padding: 10px 12px; }
+.house-readings li.is-marked { border: 2.5px solid var(--accent); }
+.house-readings p { margin: 0; }
