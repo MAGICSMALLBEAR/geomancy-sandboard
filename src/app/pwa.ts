@@ -48,8 +48,17 @@ export async function promptInstall(): Promise<void> {
   set({ canInstall: false });
   await event.prompt();
 }
+let reloading = false;
 /** Only called from an explicit user action, and only offered while nothing is busy. */
 export function acceptUpdate(): void {
+  // The plugin reloads only when workbox calls the switch an "update". A tab that was not yet controlled
+  // when it registered (first visit) sees the next version as "external" and would never reload, leaving
+  // the prompt on screen. Reload ourselves once the new worker takes over.
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloading) return;
+    reloading = true;
+    window.location.reload();
+  });
   void applyUpdate?.(true);
 }
 export const isIos = (): boolean =>
