@@ -12,7 +12,7 @@
 
 ## 如何執行
 
-需要 Node.js 24.12 以上（24.11 可跑但有警告，見 STATUS）。
+需要 Node.js 24.12 以上。
 
 ```sh
 npm install

@@ -15,7 +15,7 @@
 
 ## 本次實際驗證
 
-環境：Windows 11，Node v24.11.1，npm 11.6.2。套件版本見 `package-lock.json`（React 19.3.0、Vite 8.3.1、TypeScript 6.0.3、react-router 7.18.4、idb 8.0.3、vite-plugin-pwa 1.3.0、Vitest 5.0.3、Playwright 1.63.0）。
+環境：Windows 11，Node v24.19.0，npm 11.17.0（2026-10-01 由 24.11.1 升級後重跑全部命令）。套件版本見 `package-lock.json`（React 19.3.0、Vite 8.3.1、TypeScript 6.0.3、react-router 7.18.4、idb 8.0.3、vite-plugin-pwa 1.3.0、Vitest 5.0.3、Playwright 1.63.0）。
 
 | 命令 | 結果 |
 |---|---|
@@ -51,13 +51,11 @@
 
 ## 已知限制與問題
 
-- **這台電腦的 Node 是 24.11.1，低於 `engines` 要求的 24.12。** `npm install` 會出現 EBADENGINE 警告。另外，Node 24.11.1 的 `fs.rmSync(…, { recursive: true })` 在含中文的路徑下會讓行程直接當掉（已用暫存目錄重現）；Vite 清空 `dist/` 會踩到，所以 build 改由 `scripts/clean.mjs` 清目錄。升級 Node 後是否還需要這個繞道，尚未確認。詳見 [DECISIONS](docs/DECISIONS.md) D12。
 - 解讀是 `basic-symbolic`／`editorial-draft`：沒有成就、相位、點之道，不判斷成敗；文案未經專家審校。
 - 列化約動畫播放的約 0.8 秒內沙盤鎖定，這段時間的點擊不計（可按「略過」）。
 - 試用事件沒有記 `session_left`；`elapsedMs` 未扣除背景停留（匯出檔內有註明）。
 - 音效只有一個合成的短音，預設關閉。
 - 一次只保留一筆進行中的草稿；快速／手動模式未按下確認前的輸入不跨刷新保留（依規格）。
-- Git 已 `git init`，**尚未建立任何 commit**。
 - 沒有公開網址、後端、帳號、AI、付費或第三方追蹤。
 
 ## 啟動方式

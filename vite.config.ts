@@ -37,8 +37,6 @@ export default defineConfig({
       },
     }),
   ],
-  // dist/ is removed by scripts/clean.mjs; see docs/DECISIONS.md D12.
-  build: { emptyOutDir: false },
   server: { port: 5173 },
   preview: { port: 4173, strictPort: true },
 });
