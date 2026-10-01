@@ -3,6 +3,8 @@ import { beginTap, judgeRelease, trackTap, TAP_MAX_MOVE_PX, TAP_MAX_MS } from '.
 import { canConfirm, dotsReducer, initDots, type DotsState } from '../../src/features/casting/dotsReducer.ts';
 import { newDraft, withConfirmedRow, ROW_MAX_DOTS } from '../../src/infrastructure/records.ts';
 import type { Draft } from '../../src/domain/contracts.ts';
+import { AUTO_MAX_DOTS, AUTO_MIN_DOTS, mothersFromCounts, sourceToMothers } from '../../src/domain/geomancy.ts';
+import { drawAutoSource } from '../../src/domain/random.ts';
 
 const down = (over: Partial<Parameters<typeof beginTap>[1]> = {}) =>
   ({ pointerId: 1, isPrimary: true, button: 0, x: 100, y: 100, time: 1000, ...over });
@@ -88,5 +90,26 @@ describe('sixteen-row reducer', () => {
     for (let i = 0; i < ROW_MAX_DOTS + 5; i++) s = dotsReducer(s, { type: 'tap' });
     expect(s).toMatchObject({ phase: 'collecting', count: ROW_MAX_DOTS, capped: true });
     expect(dotsReducer(s, { type: 'clear' })).toMatchObject({ count: 0, capped: false });
+  });
+});
+
+describe('automatic sand source', () => {
+  test('16 bytes become counts 5–20 whose parity follows the low bit', () => {
+    const source = drawAutoSource(bytes => bytes.set(Array.from({ length: 16 }, (_, i) => i * 17)));
+    expect(source.counts).toEqual(Array.from({ length: 16 }, (_, i) => AUTO_MIN_DOTS + ((i * 17) & 15)));
+    expect(source.counts.every(n => n >= AUTO_MIN_DOTS && n <= AUTO_MAX_DOTS)).toBe(true);
+    expect(sourceToMothers(source)).toEqual(mothersFromCounts(source.counts));
+  });
+  test('the fill is called exactly once per draw', () => {
+    let calls = 0;
+    drawAutoSource(() => { calls += 1; });
+    expect(calls).toBe(1);
+  });
+  test('wrong algorithm, out-of-range or missing counts are rejected', () => {
+    const counts = Array(16).fill(10);
+    expect(() => sourceToMothers({ kind: 'auto', algorithm: 'x' as 'webcrypto-counts-v1', counts })).toThrow();
+    expect(() => sourceToMothers({ kind: 'auto', algorithm: 'webcrypto-counts-v1', counts: [...counts.slice(1), 4] })).toThrow();
+    expect(() => sourceToMothers({ kind: 'auto', algorithm: 'webcrypto-counts-v1', counts: [...counts.slice(1), 21] })).toThrow();
+    expect(() => sourceToMothers({ kind: 'auto', algorithm: 'webcrypto-counts-v1', counts: counts.slice(1) })).toThrow();
   });
 });

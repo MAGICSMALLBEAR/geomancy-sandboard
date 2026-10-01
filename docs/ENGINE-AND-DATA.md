@@ -21,10 +21,13 @@
 | `CastSource.kind` | 必要資料 | 四母象轉換 |
 |---|---|---|
 | `dots` | `counts` 長度 16，每數為 1–4096 的整數 | 每數 `n%2`，每連續四數為一母 |
+| `auto` | `algorithm='webcrypto-counts-v1'`；`counts` 長度 16，每數為 5–20 的整數 | 與 `dots` 相同：每數 `n%2`，每連續四數為一母 |
 | `quick` | `algorithm='webcrypto-16bits-v1'`；`bytes` 恰好兩個 0–255 整數 | 第一 byte 高位至低位，再第二 byte；每四位一母 |
 | `manual` | `mothers` 恰好四個合法 Figure | 複製為四母象，不臆造 counts |
 
 快速模式一次呼叫 `getRandomValues(new Uint8Array(2))`。例如 `[0xAC,0xF0]` 對應位元 `1010 1100 1111 0000`，圖式依序為 `1212,1122,1111,2222`。均勻的 16 位輸入沒有模除偏差；這是軟體轉換性質，不代表人的點沙行為均勻。
+
+自動點沙（2026-10-01 新增，DECISIONS D22）一次呼叫 `getRandomValues(new Uint8Array(16))`，每列粒數為 `5 + (byte & 15)`。低 4 位元均勻，所以 5–20 每個值機率相同，奇偶各半，沒有模除偏差。舊版 App 不認得 `auto`，匯入這類記錄會判為格式不正確，不會進入一般記錄。
 
 亂數來源只在明確的起卦 action 呼叫；排盤、閱讀結果、動畫、重新整理、React render/effect 都不能呼叫。`random.ts` 是外部取樣邊界，`geomancy.ts` 不含亂數、時間、DOM 或 I/O。測試可注入固定 bytes；正式介面不能讓 debug fixture 冒充隨機起卦。
 

@@ -28,7 +28,9 @@ export const figureAria = (figure: Figure): string => {
 };
 
 export const TOPIC_LABEL: Record<Question['topic'], string> = { general: '一般反思', work: '工作', relationship: '關係' };
-export const METHOD_LABEL: Record<CastSource['kind'], string> = { dots: '十六列點沙', quick: '快速起卦（裝置亂數）', manual: '手動輸入四母象' };
+export const METHOD_LABEL: Record<CastSource['kind'], string> = {
+  dots: '十六列點沙', auto: '自動點沙（裝置亂數）', quick: '快速起卦（裝置亂數）', manual: '手動輸入四母象',
+};
 
 export const TOPIC_HOUSES: Record<Exclude<Question['topic'], 'general'>, { house: 5 | 6 | 7 | 10; label: string }[]> = {
   work: [

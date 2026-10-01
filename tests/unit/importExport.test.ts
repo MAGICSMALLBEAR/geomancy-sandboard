@@ -29,6 +29,13 @@ const edited = (edit: (r: ReturnType<typeof backup>['records'][0]) => void) => {
 };
 
 describe('import validation', () => {
+  test('I01b: an automatic-sand record survives export and import unchanged', () => {
+    const auto = { ...record(), source: { kind: 'auto' as const, algorithm: 'webcrypto-counts-v1' as const, counts: [...(record().source as { counts: readonly number[] }).counts] } };
+    const back = only(buildExportFiles([auto], NOW)[0].text);
+    expect(back.status === 'valid' && back.record).toEqual(auto);
+    expect(checkRecord(auto)).toMatchObject({ ok: true });
+  });
+
   test('I01: export then import restores every field exactly', () => {
     const original = { ...record(), notes: '繁體中文筆記：回顧一下。', revision: 3, updatedAt: '2026-10-02T03:04:05.000Z' };
     const [file] = buildExportFiles([original], NOW);
@@ -106,6 +113,9 @@ describe('import validation', () => {
     invalid(r => { r.source.counts.pop(); });
     invalid(r => { r.source = { kind: 'quick', algorithm: 'math-random', bytes: [1, 2] }; });
     invalid(r => { r.source = { kind: 'dice' }; });
+    invalid(r => { r.source = { kind: 'auto', algorithm: 'math-random', counts: r.source.counts }; });
+    invalid(r => { r.source = { kind: 'auto', algorithm: 'webcrypto-counts-v1', counts: [...r.source.counts.slice(1), 21] }; });
+    invalid(r => { r.source = { kind: 'auto', algorithm: 'webcrypto-counts-v1', counts: r.source.counts.slice(1) }; });
     invalid(r => { r.chart.J = [0, 1, 1]; });
     invalid(r => { delete r.chart.R; });
     invalid(r => { r.importOrigin = { originalId: 'x', importedAt: NOW }; });

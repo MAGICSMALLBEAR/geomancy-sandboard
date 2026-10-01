@@ -71,6 +71,10 @@ function readSource(v: unknown): CastSource {
     const counts = own(o, 'counts');
     if (!Array.isArray(counts)) bad('點沙來源缺少 16 列數量');
     source = { kind, counts: Array.from(counts as unknown[]) as number[] };
+  } else if (kind === 'auto') {
+    const counts = own(o, 'counts');
+    if (!Array.isArray(counts)) bad('自動點沙來源缺少 16 列數量');
+    source = { kind, algorithm: own(o, 'algorithm') as 'webcrypto-counts-v1', counts: Array.from(counts as unknown[]) as number[] };
   } else if (kind === 'quick') {
     const bytes = own(o, 'bytes');
     if (!Array.isArray(bytes) || bytes.length !== 2) bad('快速來源需要兩個位元組');
@@ -178,6 +182,7 @@ function canonicalReading(r: Reading): Reading {
 const canonicalFigure = (f: Figure): Figure => [f[0], f[1], f[2], f[3]];
 const canonicalSource = (s: CastSource): CastSource =>
   s.kind === 'dots' ? { kind: 'dots', counts: [...s.counts] }
+  : s.kind === 'auto' ? { kind: 'auto', algorithm: s.algorithm, counts: [...s.counts] }
   : s.kind === 'quick' ? { kind: 'quick', algorithm: s.algorithm, bytes: [s.bytes[0], s.bytes[1]] }
   : { kind: 'manual', mothers: s.mothers.map(canonicalFigure) as unknown as Mothers };
 

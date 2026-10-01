@@ -28,9 +28,9 @@ export interface Draft {
   question: Question;
   ruleVersion: 'western-sequential-v1';
   contentVersion: 'zh-TW-basic-draft-v1';
-  method: 'dots' | 'quick' | 'manual';
+  method: 'dots' | 'auto' | 'quick' | 'manual';
   confirmedCounts: number[];
-  /** quick/manual data captured once; set before finalization, then never redraw on retry. */
+  /** auto/quick/manual data captured once; set before finalization, then never redraw on retry. */
   preparedSource: CastSource | null;
   state: 'casting' | 'ready-to-finalize';
 }

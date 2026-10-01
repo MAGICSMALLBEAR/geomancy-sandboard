@@ -9,6 +9,7 @@ import { METHOD_LABEL } from '../../content/labels.ts';
 import { Dialog } from '../../components/Dialog.tsx';
 import { DotsCasting } from './DotsCasting.tsx';
 import { QuickCasting } from './QuickCasting.tsx';
+import { AutoCasting, AutoSandShow } from './AutoCasting.tsx';
 import { ManualCasting } from './ManualCasting.tsx';
 import { clearPending, completeCast, keepAsPending } from './pending.ts';
 
@@ -27,6 +28,8 @@ export function CastPage() {
   const [load, setLoad] = useState<Load>({ status: 'loading' });
   const [final, setFinal] = useState<Final>({ status: 'idle' });
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  /** Automatic sand, already saved: its playback runs before the result opens. */
+  const [playback, setPlayback] = useState<readonly number[] | null>(null);
   const finalizing = useRef(false);
 
   useEffect(() => {
@@ -35,17 +38,18 @@ export function CastPage() {
   }, []);
 
   /** Saves the locked source and creates the record under the draft's ID. A retry reuses the same input. */
-  const finalize = useCallback(async (draft: Draft, source: CastSource | null) => {
+  const finalize = useCallback(async (draft: Draft, source: CastSource | null, playBack = false) => {
     if (finalizing.current) return;
     finalizing.current = true;
     setFinal({ status: 'working' });
     try {
-      await completeCast(repo, draft, source);
+      const record = await completeCast(repo, draft, source);
       clearPending(draft.id);
       logEvent('chart_completed', { method: draft.method });
       // Best effort only; the result is never treated as a guarantee.
       void navigator.storage?.persist?.().catch(() => undefined);
-      navigate(`/result/${draft.id}`, { replace: true, state: { animate: true } });
+      if (playBack && record.source.kind === 'auto') { setFinal({ status: 'idle' }); setPlayback(record.source.counts); }
+      else navigate(`/result/${draft.id}`, { replace: true, state: { animate: true } });
     } catch (error) {
       const code = toAppError(error).code;
       setFinal({ status: 'failed', code, draft, source });
@@ -101,7 +105,9 @@ export function CastPage() {
   };
 
   let body;
-  if (final.status === 'working') {
+  if (playback) {
+    body = <AutoSandShow counts={playback} onDone={() => navigate(`/result/${draft.id}`, { replace: true, state: { animate: true } })} />;
+  } else if (final.status === 'working') {
     body = <p role="status" className="card">正在保存並排盤…</p>;
   } else if (final.status === 'failed') {
     const { code, source } = final;
@@ -110,7 +116,7 @@ export function CastPage() {
         <h2>尚未保存</h2>
         <p>{ERROR_TEXT[code]}這一盤的輸入已固定，重試會使用同一份輸入，不會重新取數。</p>
         <div className="dialog-actions">
-          <button type="button" className="primary" onClick={() => void finalize(final.draft, source)}>重試保存</button>
+          <button type="button" className="primary" onClick={() => void finalize(final.draft, source, final.draft.method === 'auto')}>重試保存</button>
           <button type="button" onClick={() => {
             try {
               keepAsPending(final.draft, source);
@@ -124,6 +130,8 @@ export function CastPage() {
     );
   } else if (draft.method === 'dots') {
     body = <DotsCasting draft={draft} onReady={ready => void finalize(ready, null)} onGone={() => setLoad({ status: 'missing' })} />;
+  } else if (draft.method === 'auto') {
+    body = <AutoCasting onSource={source => void finalize(draft, source, true)} />;
   } else if (draft.method === 'quick') {
     body = <QuickCasting onSource={source => void finalize(draft, source)} />;
   } else {
@@ -135,10 +143,12 @@ export function CastPage() {
       <header className="cast-head">
         <p className="eyebrow">{METHOD_LABEL[draft.method]}</p>
         <h1 className="question-text">{draft.question.text}</h1>
-        <p className="cast-links">
-          <Link to="/">暫停，回首頁</Link>
-          <button type="button" className="link-button" onClick={() => setConfirmDiscard(true)}>放棄這筆草稿</button>
-        </p>
+        {!playback && (
+          <p className="cast-links">
+            <Link to="/">暫停，回首頁</Link>
+            <button type="button" className="link-button" onClick={() => setConfirmDiscard(true)}>放棄這筆草稿</button>
+          </p>
+        )}
       </header>
       {body}
       <Dialog open={confirmDiscard} title="放棄這筆草稿？" onClose={() => setConfirmDiscard(false)}>

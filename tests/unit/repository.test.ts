@@ -90,7 +90,7 @@ describe.each(makers)('%s repository', (_name, make) => {
     expect(record.mothers.map(toDots)).toEqual(['1212', '1122', '1111', '2222']);
   });
 
-  test('E03/E04: the three sources agree, and repeated mothers are legal', async () => {
+  test('E03/E04: every source kind agrees, and repeated mothers are legal', async () => {
     const repo = await make();
     const mothers = mothersFromCounts(fixture.counts);
     const bits = mothers.flat().join('');
@@ -99,12 +99,15 @@ describe.each(makers)('%s repository', (_name, make) => {
     for (const [method, source] of [
       ['quick', { kind: 'quick', algorithm: 'webcrypto-16bits-v1', bytes }],
       ['manual', { kind: 'manual', mothers }],
-    ] as ['quick' | 'manual', CastSource][]) {
+      // The fixture's counts (12–17) are inside the automatic range, so the same parities give the same chart.
+      ['auto', { kind: 'auto', algorithm: 'webcrypto-counts-v1', counts: fixture.counts }],
+    ] as ['quick' | 'manual' | 'auto', CastSource][]) {
       const draft = await repo.createDraft(QUESTION, method);
       const record = await completeCast(repo, draft, source);
       charts.push({ chart: record.chart, reading: record.reading });
     }
     expect(charts[0]).toEqual(charts[1]);
+    expect(charts[2]).toEqual(charts[0]);
     expect(Object.fromEntries(NODES.map(n => [n, toDots(charts[0].chart[n])]))).toEqual(fixture.expectedDots);
 
     for (const dots of ['2222', '1111']) {

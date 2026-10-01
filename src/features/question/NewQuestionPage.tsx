@@ -13,6 +13,7 @@ const TEXT_MAX = 500, TIMEFRAME_MAX = 80;
 const TIMEFRAMES = ['未來一個月', '未來三個月'];
 const METHOD_HELP: Record<CastMethod, string> = {
   dots: '在沙面上點十六列，每列的奇偶決定一點或兩點。最有操作感，約需幾分鐘。',
+  auto: '不想自己點？按一次，由裝置亂數決定每列落下幾粒沙，再看著沙子自動落下、化約成四個母象。',
   quick: '按一次，由裝置亂數直接產生四個母象。',
   manual: '你已經用紙筆或實體沙盤起好卦，直接輸入四個母象。',
 };
@@ -156,7 +157,7 @@ export function NewQuestionPage() {
       <fieldset className="field">
         <legend>起卦方式</legend>
         <div className="choice-col">
-          {(['dots', 'quick', 'manual'] as CastMethod[]).map(option => (
+          {(['dots', 'auto', 'quick', 'manual'] as CastMethod[]).map(option => (
             <label key={option} className="choice">
               <input type="radio" name="method" checked={method === option} onChange={() => setMethod(option)} />
               <span><strong>{METHOD_LABEL[option]}</strong><br />{METHOD_HELP[option]}</span>

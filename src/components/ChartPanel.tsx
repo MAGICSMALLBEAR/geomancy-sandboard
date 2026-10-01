@@ -22,12 +22,16 @@ function Derivation({ node, chart, source }: { node: NodeId; chart: Chart; sourc
     const index = Number(node[1]) - 1;
     if (source.kind === 'quick') return <p>數位亂數來源：由裝置亂數一次產生的十六個位元，每四個位元組成一個母象。</p>;
     if (source.kind === 'manual') return <p>手動設定：這個母象由你直接輸入。</p>;
+    const verb = source.kind === 'auto' ? '裝置亂數落下' : '點了';
     return (
+      <>
+      {source.kind === 'auto' && <p>自動點沙：每列落下幾粒沙由裝置亂數一次決定（5–20 粒），奇偶規則與手動點沙相同。</p>}
       <ol className="derive-rows">
         {source.counts.slice(index * 4, index * 4 + 4).map((count, row) => (
-          <li key={row}>{ROW_ELEMENT[row]}行：點了 {count} 下，{count % 2 === 1 ? '奇數' : '偶數'} → {dotWord(count % 2)}</li>
+          <li key={row}>{ROW_ELEMENT[row]}行：{verb} {count} {source.kind === 'auto' ? '粒' : '下'}，{count % 2 === 1 ? '奇數' : '偶數'} → {dotWord(count % 2)}</li>
         ))}
       </ol>
+      </>
     );
   }
   if (node.startsWith('D') && parents) {

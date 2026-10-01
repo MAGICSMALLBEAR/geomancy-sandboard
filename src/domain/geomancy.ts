@@ -67,7 +67,13 @@ export function houseNode(house: number): NodeId {
 export type CastSource =
   | { kind: 'dots'; counts: readonly number[] }
   | { kind: 'quick'; algorithm: 'webcrypto-16bits-v1'; bytes: readonly [number, number] }
-  | { kind: 'manual'; mothers: Mothers };
+  | { kind: 'manual'; mothers: Mothers }
+  /** Automatic sand: device randomness picks each row's dot count once; parity works as in `dots`. */
+  | { kind: 'auto'; algorithm: 'webcrypto-counts-v1'; counts: readonly number[] };
+
+/** Row counts drawn by the automatic method: 5 + (byte & 15), so odd and even are equally likely. */
+export const AUTO_MIN_DOTS = 5;
+export const AUTO_MAX_DOTS = 20;
 
 export function sourceToMothers(source: CastSource): Mothers {
   if (!source || typeof source !== 'object') throw new Error('INVALID_SOURCE');
@@ -75,6 +81,13 @@ export function sourceToMothers(source: CastSource): Mothers {
   if (source.kind === 'manual') {
     assertMothers(source.mothers);
     return source.mothers.map(m => [...m]) as unknown as Mothers;
+  }
+  if (source.kind === 'auto') {
+    if (source.algorithm !== 'webcrypto-counts-v1' || !Array.isArray(source.counts) || source.counts.length !== 16 ||
+        !Array.from(source.counts).every(x => Number.isInteger(x) && x >= AUTO_MIN_DOTS && x <= AUTO_MAX_DOTS)) {
+      throw new Error('INVALID_RANDOM_BYTES');
+    }
+    return mothersFromCounts(source.counts);
   }
   if (source.kind === 'quick') {
     if (source.algorithm !== 'webcrypto-16bits-v1' || !Array.isArray(source.bytes) ||

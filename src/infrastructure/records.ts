@@ -21,7 +21,7 @@ export function newId(): string {
 
 export function newDraft(id: string, question: Question, method: CastMethod, now: string): Draft {
   try { assertQuestion(question); } catch (e) { throw toAppError(e); }
-  if (method !== 'dots' && method !== 'quick' && method !== 'manual') throw new AppError('INVALID_STATE');
+  if (method !== 'dots' && method !== 'auto' && method !== 'quick' && method !== 'manual') throw new AppError('INVALID_STATE');
   return {
     schemaVersion: 1, id, revision: 0, createdAt: now, updatedAt: now,
     question: { text: question.text, timeframe: question.timeframe, topic: question.topic, targetHouse: question.targetHouse },
@@ -45,7 +45,7 @@ export function withConfirmedRow(draft: Draft, expectedRevision: number, count: 
   };
 }
 
-/** Quick/manual only. An already prepared source is returned untouched and never overwritten. */
+/** Auto/quick/manual only. An already prepared source is returned untouched and never overwritten. */
 export function withPreparedSource(draft: Draft, expectedRevision: number, source: CastSource, now: string): Draft {
   if (draft.preparedSource) return draft;
   if (draft.revision !== expectedRevision) throw new AppError('REVISION_CONFLICT');
@@ -55,7 +55,9 @@ export function withPreparedSource(draft: Draft, expectedRevision: number, sourc
   try { sourceToMothers(source); } catch (e) { throw toAppError(e); }
   const prepared: CastSource = source.kind === 'quick'
     ? { kind: 'quick', algorithm: source.algorithm, bytes: [source.bytes[0], source.bytes[1]] }
-    : { kind: 'manual', mothers: sourceToMothers(source) };
+    : source.kind === 'auto'
+      ? { kind: 'auto', algorithm: source.algorithm, counts: [...source.counts] }
+      : { kind: 'manual', mothers: sourceToMothers(source) };
   return { ...draft, preparedSource: prepared, state: 'ready-to-finalize', revision: draft.revision + 1, updatedAt: now };
 }
 
