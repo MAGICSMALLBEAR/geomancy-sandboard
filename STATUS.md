@@ -13,6 +13,14 @@
 - [x] **M4** Manifest、自製圖示、precache、提示式更新（起卦中與筆記未保存時不提示）、安裝按鈕與 iOS 說明、360／768／1440 px 版面。
 - [x] **M5** 結果頁 3 題回饋、本機試用事件（預設關閉）、回饋匯出與清除、文件更新。
 
+## 測試網址
+
+**https://magicsmallbear.github.io/geomancy-sandboard/**（GitHub Pages，原始碼 [MAGICSMALLBEAR/geomancy-sandboard](https://github.com/MAGICSMALLBEAR/geomancy-sandboard)，見 DECISIONS D20）。
+
+2026-10-01 部署後實測（桌面 Chromium，Playwright 對線上網址）：主要檔案皆 200 且 HTTPS；Service Worker 接管頁面；設定頁顯示「已可離線使用」；斷網後開新分頁讀取教學頁正常；console 無錯誤。這只是桌面冒煙測試，不代表真機已驗證。
+
+更新網站：commit 後執行 `npm run deploy`（build 並強制推送 `dist/` 到 `gh-pages` 分支，約 1 分鐘後生效）。已開啟過的使用者會看到更新提示。
+
 ## 本次實際驗證
 
 環境：Windows 11，Node v24.19.0，npm 11.17.0（2026-10-01 由 24.11.1 升級後重跑全部命令）。套件版本見 `package-lock.json`（React 19.3.0、Vite 8.3.1、TypeScript 6.0.3、react-router 7.18.4、idb 8.0.3、vite-plugin-pwa 1.3.0、Vitest 5.0.3、Playwright 1.63.0）。
@@ -46,7 +54,7 @@
 - [ ] 新版本更新提示（`needRefresh`）、資料庫 `blocked／versionchange` 提示、真實配額不足（`QUOTA`）：有程式路徑，沒有自動或人工測試。
 - [ ] 本機記錄驗證失敗時的「只能以純文字檢視」畫面：只由單元測試覆蓋判定邏輯，畫面未測。
 - [ ] I09 整批匯入 rollback 只在 fake-indexeddb 與記憶體實作測過，沒有在真實瀏覽器注入中途失敗。
-- [ ] 手機經區網 `http://192.168.x.x` 開啟：不是安全來源，預期沒有離線與安裝功能；這個情境沒有實測。
+- [ ] 手機經區網 `http://192.168.x.x` 開啟：不是安全來源，預期沒有離線與安裝功能；這個情境沒有實測。真機測試請改用上方 HTTPS 測試網址。
 - [ ] M6：5–8 位使用者試用、地占專家逐條審校中文解讀。
 
 ## 已知限制與問題
@@ -56,7 +64,7 @@
 - 試用事件沒有記 `session_left`；`elapsedMs` 未扣除背景停留（匯出檔內有註明）。
 - 音效只有一個合成的短音，預設關閉。
 - 一次只保留一筆進行中的草稿；快速／手動模式未按下確認前的輸入不跨刷新保留（依規格）。
-- 沒有公開網址、後端、帳號、AI、付費或第三方追蹤。
+- 測試網址是公開的，拿到網址的人都能開；原始碼 repo 也是公開的。沒有後端、帳號、AI、付費或第三方追蹤，資料只存在各自的瀏覽器。
 
 ## 啟動方式
 
@@ -71,4 +79,4 @@ npm run preview      # 預覽 production build：http://localhost:4173（離線�
 
 ## 下一位接手者的第一步
 
-讀本檔與 `docs/DECISIONS.md`，執行 `npm run test:core && npm run test:unit && npm run test:e2e` 重現結果。接著依 [DEVICE-CHECKLIST](docs/DEVICE-CHECKLIST.md) 做真機驗證（需要 HTTPS 測試網址，由產品負責人決定），再依 [PILOT](docs/PILOT.md) 安排 M6。
+讀本檔與 `docs/DECISIONS.md`，執行 `npm run test:core && npm run test:unit && npm run test:e2e` 重現結果。接著依 [DEVICE-CHECKLIST](docs/DEVICE-CHECKLIST.md) 用上方測試網址做真機驗證，再依 [PILOT](docs/PILOT.md) 安排 M6。
