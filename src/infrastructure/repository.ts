@@ -6,8 +6,11 @@ import { AppError } from './errors.ts';
 import { newDraft, newId, recordFromDraft, withConfirmedRow, withNotes, withPreparedSource, type CastMethod } from './records.ts';
 
 export type MotionSetting = 'system' | 'reduce' | 'full';
-export type Settings = { motion: MotionSetting; sound: boolean; pilotLogging: boolean };
-export const DEFAULT_SETTINGS: Settings = { motion: 'system', sound: false, pilotLogging: false };
+/** Visual themes (DECISIONS D23). Display only: never part of a record or an export. */
+export type ThemeSetting = 'sand' | 'manuscript' | 'ritual';
+export const THEMES: readonly ThemeSetting[] = ['sand', 'manuscript', 'ritual'];
+export type Settings = { motion: MotionSetting; sound: boolean; pilotLogging: boolean; theme: ThemeSetting };
+export const DEFAULT_SETTINGS: Settings = { motion: 'system', sound: false, pilotLogging: false, theme: 'sand' };
 
 /** See docs/PILOT.md: no question, notes, counts, figures, record IDs or coordinates. */
 export type PilotEvent = {

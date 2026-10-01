@@ -17,8 +17,10 @@ async function layoutProblems(page: Page): Promise<string[]> {
       // Screen-reader-only text, the scrollable shield and the sand tray clip on purpose.
       if (el.closest('.sr-only, .shield-scroll, .sand-tray')) continue;
       const style = getComputedStyle(el);
-      // The journal title is clamped to three lines by design; the full question is on the result page.
-      const clamped = style.webkitLineClamp !== 'none' && style.webkitLineClamp !== '' && !el.classList.contains('record-link');
+      // Journal titles and the question above the sand tray are clamped to three lines by design (DECISIONS D18):
+      // the full question is on the result page.
+      const byDesign = el.classList.contains('record-link') || Boolean(el.closest('.cast-head'));
+      const clamped = style.webkitLineClamp !== 'none' && style.webkitLineClamp !== '' && !byDesign;
       if (((style.overflowX === 'hidden' || style.overflowX === 'clip') && el.scrollWidth > el.clientWidth + 1 && el.textContent?.trim())
         || (clamped && el.scrollHeight > el.clientHeight + 1)) {
         problems.push(`被裁切：.${el.className}`);

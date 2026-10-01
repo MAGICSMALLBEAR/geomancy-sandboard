@@ -21,6 +21,17 @@ const MAX_PARTICLES = 300;
 const PARTICLE_MS = 220;
 export const REDUCE_MS = 520;
 
+/** Colours come from the theme's CSS tokens (app.css), so the tray follows the chosen theme. */
+const palette = (el: Element) => {
+  const style = getComputedStyle(el);
+  const v = (name: string, fallback: string) => style.getPropertyValue(name).trim() || fallback;
+  return {
+    base: v('--sand-base', '#E6D3AE'), grain: v('--sand-grain', 'rgba(114, 80, 33, 0.10)'),
+    rim: v('--dot-rim', '#F2E6CC'), mid: v('--dot-mid', '#8A6A3B'), core: v('--dot-core', '#5E4520'),
+    glow: Number(v('--dot-glow', '0')) || 0, particle: v('--particle', '#A88757'),
+  };
+};
+
 /** Small deterministic hash in [0,1): decorative jitter without touching any random source. */
 const jitter = (n: number): number => {
   const x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
@@ -51,9 +62,10 @@ export const SandCanvas = forwardRef<SandCanvasHandle, { reducedMotion: boolean 
         canvas.height = Math.round(h * dpr);
       }
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
-      context.fillStyle = '#E6D3AE';
+      const colors = palette(canvas);
+      context.fillStyle = colors.base;
       context.fillRect(0, 0, w, h);
-      context.fillStyle = 'rgba(114, 80, 33, 0.10)';
+      context.fillStyle = colors.grain;
       for (let i = 0; i < 140; i++) context.fillRect(jitter(i) * w, jitter(i + 500) * h, 1.5, 1.5);
 
       const progress = m.reduce ? Math.min(1, (now - m.reduce.start) / (m.reduced ? 1 : REDUCE_MS)) : 0;
@@ -75,11 +87,14 @@ export const SandCanvas = forwardRef<SandCanvasHandle, { reducedMotion: boolean 
         }
         if (alpha <= 0) return;
         context.globalAlpha = alpha;
-        context.fillStyle = '#F2E6CC';
+        context.fillStyle = colors.rim;
         context.beginPath(); context.arc(x, y + 1.5, 10, 0, Math.PI * 2); context.fill();
-        context.fillStyle = '#8A6A3B';
+        context.shadowColor = colors.mid;
+        context.shadowBlur = colors.glow;
+        context.fillStyle = colors.mid;
         context.beginPath(); context.arc(x, y, 8, 0, Math.PI * 2); context.fill();
-        context.fillStyle = '#5E4520';
+        context.shadowBlur = 0;
+        context.fillStyle = colors.core;
         context.beginPath(); context.arc(x, y + 1, 5, 0, Math.PI * 2); context.fill();
       });
       context.globalAlpha = 1;
@@ -93,7 +108,7 @@ export const SandCanvas = forwardRef<SandCanvasHandle, { reducedMotion: boolean 
       for (const p of m.particles) {
         const t = (now - p.born) / PARTICLE_MS;
         context.globalAlpha = 1 - t;
-        context.fillStyle = '#A88757';
+        context.fillStyle = colors.particle;
         context.fillRect(p.x * w + p.dx * t, p.y * h + p.dy * t, 2, 2);
       }
       context.globalAlpha = 1;
@@ -109,10 +124,14 @@ export const SandCanvas = forwardRef<SandCanvasHandle, { reducedMotion: boolean 
 
     const observer = new ResizeObserver(schedule);
     observer.observe(canvas);
+    // Redraw when the theme changes while the tray is open.
+    const themeWatch = new MutationObserver(schedule);
+    themeWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     document.addEventListener('visibilitychange', schedule);
     schedule();
     return () => {
       observer.disconnect();
+      themeWatch.disconnect();
       document.removeEventListener('visibilitychange', schedule);
       cancelAnimationFrame(m.frame);
       m.frame = 0;

@@ -5,8 +5,8 @@ import type { Question } from '../domain/reading.ts';
 import type { Draft, ReadingRecord } from '../domain/contracts.ts';
 import { AppError, toAppError } from './errors.ts';
 import { newDraft, newId, recordFromDraft, withConfirmedRow, withNotes, withPreparedSource, type CastMethod } from './records.ts';
-import { DEFAULT_SETTINGS, FEEDBACK_EVENT_LIMIT, sortNewestFirst, systemClock, trimEvents,
-  type ArchiveEntry, type Clock, type FeedbackEntry, type Repository, type Settings } from './repository.ts';
+import { DEFAULT_SETTINGS, FEEDBACK_EVENT_LIMIT, THEMES, sortNewestFirst, systemClock, trimEvents,
+  type ArchiveEntry, type ThemeSetting, type Clock, type FeedbackEntry, type Repository, type Settings } from './repository.ts';
 
 export const DB_NAME = 'geomancy-local';
 export const DB_VERSION = 1;
@@ -162,7 +162,8 @@ export class IdbRepository implements Repository {
     return this.run(['settings'], 'readonly', async tx => {
       const stored = Object.fromEntries((await tx.objectStore('settings').getAll()).map(r => [r.key, r.value]));
       const motion = stored.motion === 'reduce' || stored.motion === 'full' ? stored.motion : DEFAULT_SETTINGS.motion;
-      return { motion, sound: stored.sound === true, pilotLogging: stored.pilotLogging === true } satisfies Settings;
+      const theme = THEMES.includes(stored.theme as ThemeSetting) ? stored.theme as ThemeSetting : DEFAULT_SETTINGS.theme;
+      return { motion, sound: stored.sound === true, pilotLogging: stored.pilotLogging === true, theme } satisfies Settings;
     });
   }
   setSetting<K extends keyof Settings>(key: K, value: Settings[K]) {

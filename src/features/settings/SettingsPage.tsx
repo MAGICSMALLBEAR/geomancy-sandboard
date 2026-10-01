@@ -8,12 +8,17 @@ import { ERROR_TEXT, toAppError } from '../../infrastructure/errors.ts';
 import { buildFeedbackExport } from '../../infrastructure/feedback.ts';
 import { MAX_IMPORT_BYTES, asCopy, buildExportFiles, downloadText, parseImport, planImport,
   type ImportPlanItem } from '../../infrastructure/importExport.ts';
-import type { ArchiveEntry, MotionSetting } from '../../infrastructure/repository.ts';
+import { THEMES, type ArchiveEntry, type MotionSetting, type ThemeSetting } from '../../infrastructure/repository.ts';
 import { formatDate } from '../../content/labels.ts';
 import { Dialog } from '../../components/Dialog.tsx';
 
 const APP_VERSION = '0.3.0';
 const MOTION_LABEL: Record<MotionSetting, string> = { system: '跟隨系統設定', reduce: '減少動態效果', full: '完整動態效果' };
+const THEME_LABEL: Record<ThemeSetting, { name: string; help: string }> = {
+  sand: { name: '安靜沙盤', help: '自然沙色、立體沙面與凹痕，柔和安靜。' },
+  manuscript: { name: '古典手稿', help: '羊皮紙、墨點、楷體與朱紅標記，像古代地占書。' },
+  ritual: { name: '現代儀式', help: '深色背景、金色線條與發光的點，偏神秘感。' },
+};
 type Message = { kind: 'ok' | 'error'; text: string } | null;
 
 function ImportSection({ onDone }: { onDone: () => void }) {
@@ -169,6 +174,16 @@ export function SettingsPage() {
 
       <section className="card">
         <h2>顯示與聲音</h2>
+        <fieldset>
+          <legend>外觀主題</legend>
+          {THEMES.map(option => (
+            <label key={option} className="choice">
+              <input type="radio" name="theme" checked={settings.theme === option} onChange={() => change('theme', option)} />
+              <span><strong>{THEME_LABEL[option].name}</strong><br />{THEME_LABEL[option].help}</span>
+            </label>
+          ))}
+          <p className="muted">主題只改變外觀，不影響盤面、解讀與記錄。</p>
+        </fieldset>
         <fieldset>
           <legend>動態效果</legend>
           {(Object.keys(MOTION_LABEL) as MotionSetting[]).map(option => (

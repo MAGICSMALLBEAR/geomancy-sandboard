@@ -39,6 +39,9 @@ export function AppProvider({ repo, initialSettings, children }: { repo: Reposit
   useEffect(() => {
     document.documentElement.dataset.motion = reducedMotion ? 'reduce' : 'full';
   }, [reducedMotion]);
+  useEffect(() => {
+    document.documentElement.dataset.theme = settings.theme;
+  }, [settings.theme]);
 
   const updateSetting = useCallback(async <K extends keyof Settings>(key: K, value: Settings[K]) => {
     // Settings are display preferences: apply at once, and put the old value back if saving fails.
