@@ -378,3 +378,5 @@ details[open] > summary::before { content: "▾ "; }
 .house-readings li { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); padding: 10px 12px; }
 .house-readings li.is-marked { border: 2.5px solid var(--accent); }
 .house-readings p { margin: 0; }
+
+.share-preview { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; margin: 8px 0; }

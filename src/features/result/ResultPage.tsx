@@ -10,6 +10,8 @@ import { NOTES_MAX } from '../../infrastructure/records.ts';
 import { formatDate } from '../../content/labels.ts';
 import { Dialog } from '../../components/Dialog.tsx';
 import { ResultView } from '../../components/ResultView.tsx';
+import { METHOD_LABEL } from '../../content/labels.ts';
+import { ShareImageDialog } from './ShareImageDialog.tsx';
 import { clearPending, completeCast, getPending, hasPending } from '../casting/pending.ts';
 
 type Load =
@@ -163,6 +165,7 @@ export function ResultPage() {
   const [animate, setAnimate] = useState(() => Boolean((location.state as { animate?: boolean } | null)?.animate));
   const [retry, setRetry] = useState<{ kind: 'idle' | 'working' } | { kind: 'failed'; code: AppErrorCode }>({ kind: 'idle' });
   const [exportOpen, setExportOpen] = useState(false);
+  const [imageOpen, setImageOpen] = useState(false);
   const retrying = useRef(false);
 
   const read = useCallback(async () => {
@@ -263,8 +266,11 @@ export function ResultPage() {
       <nav className="result-actions" aria-label="這筆記錄的操作">
         <Link className="button primary" to="/new">新占問</Link>
         <Link className="button" to="/journal">回日誌</Link>
+        <button type="button" onClick={() => setImageOpen(true)}>存成圖片</button>
         <button type="button" onClick={() => setExportOpen(true)}>匯出此筆</button>
       </nav>
+      <ShareImageDialog open={imageOpen} onClose={() => setImageOpen(false)} chart={record.chart} question={record.question}
+        dateLabel={formatDate(record.createdAt)} methodLabel={METHOD_LABEL[record.source.kind]} createdAt={record.createdAt} />
       <Dialog open={exportOpen} title="匯出這筆記錄" onClose={() => setExportOpen(false)}>
         <p>匯出的檔案包含你的問題文字、盤面、解讀與筆記，請自行妥善保管。</p>
         <div className="dialog-actions">

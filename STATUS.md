@@ -1,6 +1,6 @@
 # 目前實際狀態
 
-最後更新：2026-10-01 · App 版本 0.4.0（測試版）
+最後更新：2026-10-02 · App 版本 0.5.0（測試版）
 
 **M0–M5 已實作，可在電腦瀏覽器從提問走到回顧記錄。0.4.0 依產品負責人試用回饋加入：點沙判定放寬、自動點沙、三種外觀主題、進階解讀（成事關係、點之道、證人與裁判、十二宮逐宮，草稿）。自動測試全部通過，含 Chromium、Edge、Firefox、Playwright WebKit 與模擬縮放。真機（iPhone／Android）、macOS Safari、讀屏尚未由人實測；M6 使用者試用與專家審校尚未開始。**
 
@@ -19,6 +19,9 @@
   - 外觀主題（D23）：安靜沙盤（預設）、古典手稿、現代儀式（深色），設定頁切換；只用系統字型。
   - 進階解讀（D24）：成事關係（同象／接合／轉移／傳遞／不成事）、點之道（可在盾盤標出路徑）、證人與裁判、十二宮逐宮。由盤面即時計算、不存入記錄，文字是未審校草稿。
   - 風格樣板（設計稿）：https://claude.ai/artifact/PK8qZ81vo45c4B7RDBojGy
+- [x] **0.5.0（2026-10-02）**
+  - 結果「存成圖片」（D25）：本機產生 1080×1350 PNG，含盾盤、裁判、成事結論；問題文字預設不放。
+  - 試用事件：`elapsedMs` 扣除背景停留；離開頁面時記一次 `session_left`。
 
 ## 測試網址
 
@@ -37,11 +40,11 @@
 | `npm run typecheck` | 通過，0 錯誤 |
 | `npm run lint` | 通過，0 錯誤 0 警告 |
 | `npm run test:core` | 10 通過／0 失敗；輸出在 [core-test-report.tap](docs/core-test-report.tap) |
-| `npm run test:unit` | 4 個檔案、62 項通過（手勢判定、點沙 reducer、自動點沙來源、Repository 在 fake-indexeddb 與記憶體兩種實作、匯入匯出邊界、成事關係各種情況、65,536 盤點之道性質） |
-| `npm run build` | 成功；入口 JS gzip 141.86 KiB（目標 ≤250），precache 14 項 |
-| `npm run test:e2e` | 38 通過、1 略過（P05b 只在 WebKit 跑），Playwright Chromium 153.0.8010.12，對 production build（`vite preview`）執行 |
-| `PW_EDGE=1 npx playwright test --project=msedge` | 38 通過、1 略過，本機安裝的 Microsoft Edge 154.0.4258.48 |
-| `PW_ENGINES=1 npx playwright test` | 114 通過、3 略過：Chromium、Firefox 155.0、WebKit 26.6（Playwright 的 Windows 版，不等於 macOS／iOS Safari）。需先 `npx playwright install firefox webkit` |
+| `npm run test:unit` | 6 個檔案、69 項通過（手勢判定、點沙 reducer、自動點沙來源、Repository 在 fake-indexeddb 與記憶體兩種實作、匯入匯出邊界、成事關係各種情況、65,536 盤點之道性質、試用計時、圖片內容） |
+| `npm run build` | 成功；入口 JS gzip 144.25 KiB（目標 ≤250），precache 14 項 |
+| `npm run test:e2e` | 40 通過、1 略過（P05b 只在 WebKit 跑），Playwright Chromium 153.0.8010.12，對 production build（`vite preview`）執行 |
+| `PW_EDGE=1 npx playwright test --project=msedge` | 40 通過、1 略過，本機安裝的 Microsoft Edge 154.0.4258.48 |
+| `PW_ENGINES=1 npx playwright test` | 120 通過、3 略過：Chromium、Firefox 155.0、WebKit 26.6（Playwright 的 Windows 版，不等於 macOS／iOS Safari）。需先 `npx playwright install firefox webkit` |
 
 端到端涵蓋（對應 [ACCEPTANCE](docs/ACCEPTANCE.md)）：
 

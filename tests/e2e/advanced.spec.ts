@@ -1,5 +1,6 @@
 // Advanced reading (DECISIONS D24): computed from the chart on display, never stored.
 import { expect, test, type Page } from '@playwright/test';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { FIXTURE_MOTHER_NAMES, fillManual, idbAll, startCast } from './helpers.ts';
 
 test.beforeEach(async ({ page }) => {
@@ -67,4 +68,36 @@ test('一般反思沒有問題宮：不判斷成事關係並說明原因', async
   await expect(advanced.locator('article').filter({ hasText: '成事關係' })).toContainText('沒有選定問題宮，所以不判斷');
   await advanced.getByText('十二宮逐宮解讀').click();
   await expect(advanced.locator('.house-readings > li .tag', { hasText: '問題宮' })).toHaveCount(0);
+});
+
+test('存成圖片：本機產生 1080×1350 PNG，預設不含問題文字，勾選後重新產生', async ({ page }, testInfo) => {
+  await castManual(page, ['喜悅／Laetitia', '道路／Via', '道路／Via', '道路／Via']);
+  await page.getByRole('button', { name: '存成圖片' }).click();
+  const dialog = page.getByRole('dialog', { name: '存成圖片' });
+  const preview = dialog.getByRole('img', { name: /圖片預覽/ });
+  await expect(preview).toBeVisible();
+  await expect(preview).not.toHaveAttribute('alt', /含問題文字/);
+  await expect(dialog.getByLabel(/在圖片中顯示問題文字/)).not.toBeChecked();
+
+  const requests: string[] = [];
+  page.on('request', r => { if (!r.url().startsWith('blob:') && !r.url().startsWith('data:')) requests.push(r.url()); });
+  const save = async (name: string) => {
+    const download = page.waitForEvent('download');
+    await dialog.getByRole('button', { name: '下載 PNG' }).click();
+    const file = testInfo.outputPath(name);
+    await (await download).saveAs(file);
+    return readFileSync(file);
+  };
+  const png = await save('plain.png');
+  expect(png.subarray(1, 4).toString('latin1')).toBe('PNG');
+  expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([1080, 1350]);
+  expect((await page.evaluate(() => document.querySelectorAll('a[download]').length))).toBe(0);
+
+  await dialog.getByLabel(/在圖片中顯示問題文字/).check();
+  await expect(preview).toHaveAttribute('alt', /含問題文字/);
+  const withQuestion = await save('with-question.png');
+  expect(withQuestion.equals(png)).toBe(false);
+  if (testInfo.project.name === 'chromium') writeFileSync('docs/evidence/share-image.png', withQuestion);
+  // Drawing and saving the image made no network request.
+  expect(requests.filter(u => !u.includes('/assets/') && !u.endsWith('/sw.js'))).toEqual([]);
 });
