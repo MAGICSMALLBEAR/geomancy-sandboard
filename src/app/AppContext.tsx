@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { DEFAULT_SETTINGS, type PilotEvent, type Repository, type Settings } from '../infrastructure/repository.ts';
-import { makePilotEvent } from '../infrastructure/feedback.ts';
+import { makePilotEvent, takeSessionLeft } from '../infrastructure/feedback.ts';
 import type { CastMethod } from '../infrastructure/records.ts';
 
 type EventExtra = { method?: CastMethod; rowIndex?: number; errorCode?: string };
@@ -61,6 +61,14 @@ export function AppProvider({ repo, initialSettings, children }: { repo: Reposit
     // Pilot logging must never break or delay the main flow.
     repo.addFeedback(makePilotEvent(name, extra)).catch(() => undefined);
   }, [logging, repo]);
+
+  // Best effort: the write may not finish before the page goes away (docs/PILOT.md §3).
+  useEffect(() => {
+    if (!logging) return;
+    const onLeave = () => { if (takeSessionLeft()) logEvent('session_left'); };
+    window.addEventListener('pagehide', onLeave);
+    return () => window.removeEventListener('pagehide', onLeave);
+  }, [logging, logEvent]);
 
   const value = useMemo(() => ({ repo, settings, updateSetting, reducedMotion, logEvent }),
     [repo, settings, updateSetting, reducedMotion, logEvent]);

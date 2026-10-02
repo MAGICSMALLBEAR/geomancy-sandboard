@@ -341,3 +341,21 @@ for (const width of [360, 768, 1440]) {
     testInfo.annotations.push({ type: 'screenshots', description: `docs/evidence/*-${width}.png` });
   });
 }
+
+test('試用記錄：離開頁面時記一次 session_left，耗時不含背景停留，不記任何問題內容', async ({ page }) => {
+  await page.goto('./#/settings');
+  await page.getByLabel(/記錄本機試用流程/).check();
+  await startCast(page, { method: '十六列點沙', work: false, text: '不應出現在事件裡的私人問題' });
+  // pagehide fires when the tab is closed or navigated away; dispatched here so the write is observable.
+  const leave = () => page.evaluate(() => window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false })));
+  await leave();
+  await leave();
+  // getAll returns events by their random ID, so compare without relying on order.
+  await expect.poll(async () => (await idbAll<{ event: { name: string } }>(page, 'feedback')).map(e => e.event.name).sort())
+    .toEqual(['method_chosen', 'session_left', 'session_started']);
+  const events = await idbAll<{ event: Record<string, unknown> }>(page, 'feedback');
+  const left = events.find(e => e.event.name === 'session_left')!.event;
+  expect(Object.keys(left).sort()).toEqual(['elapsedMs', 'name', 'schemaVersion', 'sessionId']);
+  expect(new Set(events.map(e => e.event.sessionId)).size).toBe(1);
+  expect(JSON.stringify(events)).not.toContain('私人問題');
+});
