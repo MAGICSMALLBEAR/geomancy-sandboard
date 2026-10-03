@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { constructChart, fromDots, mothersFromCounts, RULE_VERSION, type CastSource } from '../../domain/geomancy.ts';
+import { constructChart, fromDots, mothersFromCounts, toDots, RULE_VERSION, type CastSource, type Figure } from '../../domain/geomancy.ts';
+import { canBeJudge, convert, invert, reverse, totalPoints } from '../../domain/figureRelations.ts';
+import { ADVANCED_VERSION } from '../../domain/advanced.ts';
+import { ROW_ELEMENT, dotWord, figureOf } from '../../content/labels.ts';
 import { CONTENT_VERSION, FIGURES } from '../../domain/catalog.ts';
 import { buildReading, type Question } from '../../domain/reading.ts';
 import teaching from '../../../fixtures/teaching.json';
@@ -9,10 +12,27 @@ import { SOURCES } from '../../content/sources.ts';
 import { FigureGlyph } from '../../components/FigureGlyph.tsx';
 import { ResultView } from '../../components/ResultView.tsx';
 
+const LEARN_LINKS = [
+  { to: '/learn/practice', title: '推盤練習', text: '自己設定四母象，一步一步看女象、姪象、證人與裁判怎麼算出來；也可以先自己算再對答案。' },
+  { to: '/learn/houses', title: '十二宮與盤位', text: '十六個位置各從哪裡來、哪些入宮，以及證人、裁判、調和者與進階術語。' },
+  { to: '/learn/example', title: '固定教學例題', text: '用一組固定的點數走完整個結果頁，可以播放成盤動畫。' },
+] as const;
+
 export function LearnPage() {
   return (
     <div className="learn">
       <h1>十六象與教學</h1>
+
+      <ul className="learn-links">
+        {LEARN_LINKS.map(link => (
+          <li key={link.to}>
+            <Link to={link.to} className="card learn-link">
+              <strong>{link.title}</strong>
+              <span className="muted">{link.text}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
 
       <section className="card">
         <h2>地占怎麼起卦</h2>
@@ -25,7 +45,7 @@ export function LearnPage() {
           <li>前十二個位置依序放入十二宮：母象是第 1–4 宮，女象是第 5–8 宮，姪象是第 9–12 宮。</li>
         </ol>
         <p>這裡的地占是西方十六象系統，不需要出生資料、星曆或定位。</p>
-        <Link className="button" to="/learn/example">打開固定教學例題</Link>
+        <Link className="button" to="/learn/practice">自己動手推一次</Link>
       </section>
 
       <section>
@@ -46,7 +66,8 @@ export function LearnPage() {
       <section className="card" id="sources">
         <h2>規則與來源</h2>
         <p>規則版本 {RULE_VERSION}：常見的盾盤構造，前十二個位置依序入宮。其他傳統有不同的入宮方式，本版沒有採用。</p>
-        <p>內容版本 {CONTENT_VERSION}：基礎象徵解讀（編輯草稿）。本版沒有成就、相位、點之道等技法。</p>
+        <p>內容版本 {CONTENT_VERSION}：基礎象徵解讀（編輯草稿），保存在記錄裡。
+          結果頁另有「進階解讀」（{ADVANCED_VERSION}）：成事關係、點之道、證人與裁判、十二宮逐宮，由盤面即時計算、不存入記錄，同樣是未審校的草稿。本版沒有相位等其他技法。</p>
         <ul className="source-list">
           {SOURCES.map(source => (
             <li key={source.id}>
@@ -64,24 +85,67 @@ export function LearnPage() {
   );
 }
 
+function RelatedFigure({ label, note, figure, self }: { label: string; note: string; figure: Figure; self: boolean }) {
+  const info = figureOf(figure);
+  return (
+    <li>
+      <FigureGlyph figure={figure} size={24} decorative />
+      <span>
+        <strong>{label}</strong>（{note}）：
+        {self ? <>還是「{info.zh}」本身</> : <Link to={`/learn/${info.id}`}>{info.zh}／{info.latin}</Link>}
+      </span>
+    </li>
+  );
+}
+
 export function FigurePage() {
   const { figureId } = useParams();
-  const info = FIGURES.find(f => f.id === figureId);
-  if (!info) {
+  const index = FIGURES.findIndex(f => f.id === figureId);
+  if (index === -1) {
     return <div className="card"><h1>找不到這個象</h1><Link to="/learn">回十六象目錄</Link></div>;
   }
+  const info = FIGURES[index], figure = fromDots(info.dots);
+  const previous = FIGURES[(index + FIGURES.length - 1) % FIGURES.length], next = FIGURES[(index + 1) % FIGURES.length];
+  const points = totalPoints(figure);
+  const related = [
+    { label: '反轉', note: '每行一點、兩點互換', figure: invert(figure) },
+    { label: '倒轉', note: '上下顛倒', figure: reverse(figure) },
+    { label: '對轉', note: '反轉再倒轉', figure: convert(figure) },
+  ];
   return (
     <article className="card figure-page">
       <p><Link to="/learn">← 回十六象目錄</Link></p>
       <h1>{info.zh}<span className="latin">{info.latin}</span></h1>
-      <FigureGlyph figure={fromDots(info.dots)} size={72} />
+      <FigureGlyph figure={figure} size={72} />
       <p>圖式（由上到下，1 是一點、2 是兩點）：{info.dots}</p>
       <h2>關鍵詞</h2>
       <p>{info.keywords.join('、')}</p>
       <h2>反思提示</h2>
       <p>{info.reflection}</p>
+
+      <h2>圖式結構</h2>
+      <ol className="element-rows" aria-label="四行，由上到下">
+        {figure.map((bit, row) => (
+          <li key={row}><span className="element-name">{ROW_ELEMENT[row]}行</span>{dotWord(bit)}<span aria-hidden="true">{bit === 1 ? ' •' : ' ••'}</span></li>
+        ))}
+      </ol>
+      <p>共 {points} 點，是{points % 2 === 0 ? '偶數' : '奇數'}。
+        {canBeJudge(figure)
+          ? '裁判一定是偶數點，所以這個象可能出現在裁判的位置。'
+          : '裁判一定是偶數點，所以這個象不會出現在裁判的位置，但可以出現在其他十四個位置。'}</p>
+
+      <h3>相關的象</h3>
+      <ul className="related-figures">
+        {related.map(r => <RelatedFigure key={r.label} {...r} self={toDots(r.figure) === info.dots} />)}
+      </ul>
+      <p className="muted">反轉、倒轉、對轉只是圖式上的對應，用來幫助記憶；不代表兩個象的意思一定相反。</p>
+
       <p className="muted">中文為工作譯名，內容是本產品的編輯草稿，尚未經地占專家審校。圖式參照見
         <Link to="/learn">規則與來源</Link>的 G03、G05。</p>
+      <nav className="figure-nav" aria-label="切換象">
+        <Link to={`/learn/${previous.id}`}>← {previous.zh}</Link>
+        <Link to={`/learn/${next.id}`}>{next.zh} →</Link>
+      </nav>
     </article>
   );
 }

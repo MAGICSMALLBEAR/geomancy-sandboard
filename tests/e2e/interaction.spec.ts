@@ -338,6 +338,9 @@ for (const width of [360, 768, 1440]) {
     await shot('settings');
     await page.goto('./#/learn');
     await shot('learn');
+    await page.goto('./#/learn/practice');
+    await page.getByRole('button', { name: '下一步：四女象：轉置' }).click();
+    await shot('learn-practice');
     testInfo.annotations.push({ type: 'screenshots', description: `docs/evidence/*-${width}.png` });
   });
 }

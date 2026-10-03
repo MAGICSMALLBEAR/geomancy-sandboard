@@ -8,6 +8,8 @@ import { CastPage } from '../features/casting/CastPage.tsx';
 import { ResultPage } from '../features/result/ResultPage.tsx';
 import { JournalPage } from '../features/journal/JournalPage.tsx';
 import { ExamplePage, FigurePage, LearnPage } from '../features/learn/LearnPages.tsx';
+import { HousesPage } from '../features/learn/HousesPage.tsx';
+import { PracticePage } from '../features/learn/PracticePage.tsx';
 import { SettingsPage } from '../features/settings/SettingsPage.tsx';
 
 class ErrorBoundary extends Component<{ children: ReactNode; resetKey: string }, { failed: boolean }> {
@@ -93,6 +95,8 @@ const router = createHashRouter([
       { path: '/journal', element: <JournalPage /> },
       { path: '/learn', element: <LearnPage /> },
       { path: '/learn/example', element: <ExamplePage /> },
+      { path: '/learn/houses', element: <HousesPage /> },
+      { path: '/learn/practice', element: <PracticePage /> },
       { path: '/learn/:figureId', element: <FigurePage /> },
       { path: '/settings', element: <SettingsPage /> },
       { path: '*', element: <NotFound /> },

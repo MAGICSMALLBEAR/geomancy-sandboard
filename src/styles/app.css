@@ -380,3 +380,34 @@ details[open] > summary::before { content: "▾ "; }
 .house-readings p { margin: 0; }
 
 .share-preview { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; margin: 8px 0; }
+
+/* Learning pages */
+.learn-links { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; margin-bottom: 4px; }
+.learn-link { display: grid; gap: 4px; height: calc(100% - var(--gap)); text-decoration: none; color: var(--text); }
+.learn-link strong { color: var(--accent); font-family: var(--font-head); font-size: 1.1rem; }
+.element-rows, .related-figures, .role-nodes, .practice-check { list-style: none; padding: 0; }
+.element-rows li { display: flex; gap: 12px; padding: 2px 0; }
+.element-name { color: var(--muted); min-width: 3em; }
+.related-figures li { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.figure-nav { display: flex; justify-content: space-between; gap: 12px; border-top: 1px dashed var(--line); padding-top: 8px; }
+.figure-nav a { min-height: 44px; display: inline-flex; align-items: center; }
+.role-note { border-top: 1px dashed var(--line); padding-top: 4px; }
+.role-note:first-of-type { border-top: 0; }
+.role-nodes li { margin-bottom: 2px; }
+.house-guide { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0 10px; }
+.house-guide h3 { margin-top: 0; }
+.house-guide p:last-child { margin-bottom: 0; }
+.term-list dt { font-weight: 700; margin-top: 8px; }
+.term-list dd { margin: 0 0 0 1.2em; }
+.practice-steps { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.practice-steps button { font-weight: 400; }
+.practice-steps button[aria-current="step"] { background: var(--accent); color: var(--on-accent); font-weight: 600; text-decoration: underline; }
+.practice-nodes { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0 10px; }
+.practice-node { border: 1px solid var(--line); }
+.practice-node h3 { margin-top: 0; }
+.practice-node > .primary { margin-top: 6px; }
+.practice-figure { display: flex; align-items: center; gap: 10px; }
+.practice-check .is-right { color: var(--ok); }
+.practice-check .is-wrong { color: var(--error); font-weight: 600; }
+.practice-detail { margin-top: 12px; }
+h2[tabindex="-1"]:focus { outline: none; }

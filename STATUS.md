@@ -1,6 +1,6 @@
 # 目前實際狀態
 
-最後更新：2026-10-02 · App 版本 0.5.0（測試版）
+最後更新：2026-10-03 · App 版本 0.6.0（測試版）
 
 **M0–M5 已實作，可在電腦瀏覽器從提問走到回顧記錄。0.4.0 依產品負責人試用回饋加入：點沙判定放寬、自動點沙、三種外觀主題、進階解讀（成事關係、點之道、證人與裁判、十二宮逐宮，草稿）。自動測試全部通過，含 Chromium、Edge、Firefox、Playwright WebKit 與模擬縮放。真機（iPhone／Android）、macOS Safari、讀屏尚未由人實測；M6 使用者試用與專家審校尚未開始。**
 
@@ -22,6 +22,11 @@
 - [x] **0.5.0（2026-10-02）**
   - 結果「存成圖片」（D25）：本機產生 1080×1350 PNG，含盾盤、裁判、成事結論；問題文字預設不放。
   - 試用事件：`elapsedMs` 扣除背景停留；離開頁面時記一次 `session_left`。
+- [x] **0.6.0（2026-10-03）學習區**（D26）
+  - 教學首頁改為學習目錄，並更正過時的「本版沒有成就、點之道」說明。
+  - 十六象頁：四行元素表、總點數與能否出現在裁判位置、反轉／倒轉／對轉的相關象、上一象／下一象。
+  - 新頁「十二宮與盤位」（`#/learn/houses`）：十六個位置的來源與入宮、十二宮常見觀察範圍、成事關係與點之道術語。
+  - 新頁「推盤練習」（`#/learn/practice`）：自設四母象，分六步看女象、姪象、證人、裁判、調和者如何推出；可切換「先自己算再對答案」並計分。不存記錄、不用起卦亂數。
 
 ## 測試網址
 
@@ -40,9 +45,9 @@
 | `npm run typecheck` | 通過，0 錯誤 |
 | `npm run lint` | 通過，0 錯誤 0 警告 |
 | `npm run test:core` | 10 通過／0 失敗；輸出在 [core-test-report.tap](docs/core-test-report.tap) |
-| `npm run test:unit` | 6 個檔案、69 項通過（手勢判定、點沙 reducer、自動點沙來源、Repository 在 fake-indexeddb 與記憶體兩種實作、匯入匯出邊界、成事關係各種情況、65,536 盤點之道性質、試用計時、圖片內容） |
-| `npm run build` | 成功；入口 JS gzip 144.25 KiB（目標 ≤250），precache 14 項 |
-| `npm run test:e2e` | 40 通過、1 略過（P05b 只在 WebKit 跑），Playwright Chromium 153.0.8010.12，對 production build（`vite preview`）執行 |
+| `npm run test:unit` | 7 個檔案、73 項通過（十六象反轉／倒轉／對轉、65,536 盤確認裁判恰為八個偶數點象；手勢判定、點沙 reducer、自動點沙來源、Repository 在 fake-indexeddb 與記憶體兩種實作、匯入匯出邊界、成事關係各種情況、65,536 盤點之道性質、試用計時、圖片內容） |
+| `npm run build` | 成功；入口 JS gzip 149.37 KiB（目標 ≤250），precache 14 項 |
+| `npm run test:e2e` | 43 通過、1 略過（2026-10-03，含新增 `tests/e2e/learn.spec.ts` 3 項；縮放測試加入兩個新頁）（P05b 只在 WebKit 跑），Playwright Chromium 153.0.8010.12，對 production build（`vite preview`）執行 |
 | `PW_EDGE=1 npx playwright test --project=msedge` | 40 通過、1 略過，本機安裝的 Microsoft Edge 154.0.4258.48 |
 | `PW_ENGINES=1 npx playwright test` | 120 通過、3 略過：Chromium、Firefox 155.0、WebKit 26.6（Playwright 的 Windows 版，不等於 macOS／iOS Safari）。需先 `npx playwright install firefox webkit` |
 
@@ -77,6 +82,7 @@
 ## 已知限制與問題
 
 - 進階解讀的文字（成事、點之道、證人與裁判、十二宮逐宮）是本產品原創草稿，十二宮逐宮是「象在宮中的傾向 × 宮位問題」的組合式文字，全部未經地占專家審校。成事規則依 G06、點之道依 G07；Greer 原書未能直接核對。宮位環狀相鄰、摘要排序是本產品的明確選擇（D24）。
+- 學習區新增的文字（十二宮常見範圍、位置說明、術語）同樣是未審校草稿；反轉／倒轉／對轉只是圖式對應，頁面已註明不代表意義相反。
 - 進階解讀不存入記錄，規則或文字更新後，舊記錄重開會看到新版本的進階解讀（基礎解讀仍是當時的快照）。
 - 古典手稿主題使用系統楷體：Apple 裝置有楷體、Windows 用標楷體；Android 通常沒有楷體，會顯示一般襯線字。
 - 舊版 App（0.3.x）不認得自動點沙的來源，匯入含自動點沙的備份會判為格式不正確。
