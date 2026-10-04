@@ -8,7 +8,7 @@
 |---|---|---|
 | `schemaVersion` | `1` | 儲存與匯出格式；破壞相容性需遷移 |
 | `ruleVersion` | `western-sequential-v1` | 算法、順序入宮、解讀技法的集合 |
-| `contentVersion` | `zh-TW-basic-draft-v1` | 中文象義與規則文案版本；已發布的版本凍結，改文字要新增版本（§10） |
+| `contentVersion` | `zh-TW-basic-draft-v1`；0.7.1 起新記錄為 `zh-TW-basic-draft-v2` | 中文象義與規則文案版本；已發布的版本凍結，改文字要新增版本（§10） |
 | `scope` | `basic-symbolic` | 本版只含基礎象徵解讀 |
 | `reviewStatus` | `editorial-draft` | 不得自行改成已審核 |
 
@@ -236,6 +236,7 @@ deleteReading(id): Promise<void>
 基礎解讀存進每一筆記錄，匯入與開啟時會用同一版本重組文字逐字比對。所以**已發布的內容版本永遠不能改**，改文字一律新增版本（ACCEPTANCE R05）。
 
 - `src/domain/readingV1.ts` 是 `zh-TW-basic-draft-v1` 的凍結副本，自帶十六象、十二宮與範本文字，不讀 `catalog.ts`。不要編輯。
+- `src/domain/readingV2.ts` 是 `zh-TW-basic-draft-v2`（D29）：沿用 v1 的十六象、十二宮與提示表，只改「問題所屬範圍」卡片的最後一句。之後的版本若沿用相同文字，也可以引用這些凍結的表；文字不同就另外凍結一份。
 - `src/domain/catalog.ts` 是畫面目前使用的內容（學習區、進階解讀、圖示名稱），可以依審校結果修改。
 
 新增一版的步驟：

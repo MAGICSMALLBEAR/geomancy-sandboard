@@ -257,7 +257,7 @@ test('P04 資料往返：手動四母→筆記→匯出→乾淨瀏覽器匯入�
   const futureFile = testInfo.outputPath('future.json');
   writeFileSync(futureFile, JSON.stringify(future));
   await importFile(futureFile);
-  await expect(preview).toContainText('不支援的版本（western-other-v9／zh-TW-basic-draft-v1），只能存為只讀封存');
+  await expect(preview).toContainText('不支援的版本（western-other-v9／zh-TW-basic-draft-v2），只能存為只讀封存');
   await preview.getByRole('button', { name: /確認匯入 0 筆、封存 1 筆/ }).click();
   await expect(other.locator('.archive-list')).toContainText('<img src=x onerror="window.xss=1">未來版本的問題');
   expect(await other.evaluate(() => (window as unknown as { xss?: number }).xss)).toBeUndefined();

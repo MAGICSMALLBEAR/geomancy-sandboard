@@ -1,14 +1,15 @@
 /**
  * Content version zh-TW-basic-draft-v1, FROZEN (ACCEPTANCE R05).
  * Saved records and backups carry this exact text; validation rebuilds it and compares word for word.
- * Never edit this file. Changed wording goes into a new version (see docs/ENGINE-AND-DATA.md §10).
+ * Never edit its text. Changed wording goes into a new version (see docs/ENGINE-AND-DATA.md §10);
+ * later versions may import these tables when they keep the same wording.
  */
 import { constructChart, houseNode, toDots, RULE_VERSION, type Mothers, type NodeId } from './geomancy.ts';
 import type { Claim, Evidence, Question, Reading } from './reading.ts';
 
 export const CONTENT_V1 = 'zh-TW-basic-draft-v1' as const;
 
-const FIGURES_V1: Record<string, { id: string; zh: string; latin: string; keywords: readonly string[]; reflection: string }> = {
+export const FIGURES_V1: Record<string, { id: string; zh: string; latin: string; keywords: readonly string[]; reflection: string }> = {
   '1111': { id: 'via', zh: '道路', latin: 'Via', keywords: ['移動', '變化', '歷程'], reflection: '有哪些條件正在改變？先選一個可以調整的小步驟。' },
   '2222': { id: 'populus', zh: '群眾', latin: 'Populus', keywords: ['群體', '承接', '環境影響'], reflection: '分辨自己的想法與他人的期待，再決定要回應什麼。' },
   '2211': { id: 'fortuna-major', zh: '大幸運', latin: 'Fortuna Major', keywords: ['穩定力量', '累積', '持續'], reflection: '盤點已經累積的能力，選擇能持續投入的一項。' },
@@ -26,12 +27,12 @@ const FIGURES_V1: Record<string, { id: string; zh: string; latin: string; keywor
   '2111': { id: 'caput-draconis', zh: '龍首', latin: 'Caput Draconis', keywords: ['進入', '開始', '新階段'], reflection: '若準備開始，先確認最小可行的第一步與必要條件。' },
   '1112': { id: 'cauda-draconis', zh: '龍尾', latin: 'Cauda Draconis', keywords: ['離開', '結束', '清除'], reflection: '整理需要收尾的事項，留意結束過程中的責任。' },
 };
-const HOUSES_V1 = [
+export const HOUSES_V1 = [
   '自己與當下處境', '資源與財物', '近距離往來與訊息', '家庭與根基',
   '戀愛與創作', '日常工作與照料', '伴侶、合作與對手', '共享資源與失落',
   '遠行與學習', '職位與公共角色', '朋友與支持', '隱藏的限制',
 ] as const;
-const PROMPTS_V1: Record<Question['topic'], string> = {
+export const PROMPTS_V1: Record<Question['topic'], string> = {
   general: '寫下一個你能主動觀察或採取的小步驟。',
   work: '把實際條件、可用資源與待確認資訊分開記錄。',
   relationship: '分清自己的需求與對他人的猜測，考慮一個可以尊重彼此的溝通方式。',

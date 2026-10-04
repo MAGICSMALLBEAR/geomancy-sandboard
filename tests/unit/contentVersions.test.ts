@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { FIGURES, HOUSES } from '../../src/domain/catalog.ts';
+import { CONTENT_VERSION, FIGURES, HOUSES } from '../../src/domain/catalog.ts';
 import { buildReading, isKnownContentVersion } from '../../src/domain/reading.ts';
 import { buildReadingV1, CONTENT_V1 } from '../../src/domain/readingV1.ts';
+import { CONTENT_V2 } from '../../src/domain/readingV2.ts';
+import { MemoryRepository } from '../../src/infrastructure/repository.ts';
 import { sourceToMothers } from '../../src/domain/geomancy.ts';
 import { checkRecord } from '../../src/infrastructure/importExport.ts';
 import type { ReadingRecord } from '../../src/domain/contracts.ts';
@@ -42,8 +44,37 @@ describe('R05: content versions', () => {
     expect(checkRecord(r)).toMatchObject({ ok: false, code: 'INTEGRITY_MISMATCH' });
   });
 
+  test('v2 differs from v1 only in the topic card, which no longer says perfection is not computed', () => {
+    const r = stored();
+    const v1 = buildReading(sourceToMothers(r.source), r.question, CONTENT_V1);
+    const v2 = buildReading(sourceToMothers(r.source), r.question, CONTENT_V2);
+    expect(v2.contentVersion).toBe(CONTENT_V2);
+    const topic = (x: typeof v1) => x.claims.find(c => c.claimId === 'topic')!.text;
+    expect(topic(v1)).toContain('本版尚未計算');
+    expect(topic(v2)).not.toContain('本版尚未計算');
+    expect(topic(v2)).toContain('請看下方進階解讀的「成事關係」');
+    const others = (x: typeof v1) => x.claims.filter(c => c.claimId !== 'topic');
+    expect(others(v2)).toEqual(others(v1));
+  });
+
+  test('new records use v2; old v1 and new v2 records both validate and neither can pass as the other', async () => {
+    expect(CONTENT_VERSION).toBe(CONTENT_V2);
+    const repo = new MemoryRepository();
+    let draft = await repo.createDraft(stored().question, 'manual');
+    draft = await repo.prepareSource(draft.id, draft.revision, { kind: 'manual', mothers: sourceToMothers(stored().source) });
+    const fresh = await repo.finalizeDraft(draft.id);
+    expect(fresh.contentVersion).toBe(CONTENT_V2);
+    expect(checkRecord(fresh)).toMatchObject({ ok: true });
+    expect(checkRecord(stored())).toMatchObject({ ok: true });
+
+    const relabelled = (r: ReadingRecord, v: string) => ({ ...r, contentVersion: v, reading: { ...r.reading, contentVersion: v } });
+    expect(checkRecord(relabelled(fresh, CONTENT_V1))).toMatchObject({ ok: false, code: 'INTEGRITY_MISMATCH' });
+    expect(checkRecord(relabelled(stored(), CONTENT_V2))).toMatchObject({ ok: false, code: 'INTEGRITY_MISMATCH' });
+  });
+
   test('only registered versions are known', () => {
     expect(isKnownContentVersion(CONTENT_V1)).toBe(true);
+    expect(isKnownContentVersion(CONTENT_V2)).toBe(true);
     expect(isKnownContentVersion('zh-TW-expert-v9')).toBe(false);
     expect(isKnownContentVersion('__proto__')).toBe(false);
     expect(isKnownContentVersion('toString')).toBe(false);

@@ -1,7 +1,7 @@
 import { toDots, type Figure } from './geomancy.ts';
 
 /** Original Traditional Chinese editorial drafts; NOT expert-reviewed interpretations. */
-export const CONTENT_VERSION = 'zh-TW-basic-draft-v1' as const;
+export const CONTENT_VERSION = 'zh-TW-basic-draft-v2' as const;
 export const FIGURES = [
   { id: 'via', latin: 'Via', zh: '道路', dots: '1111', keywords: ['移動', '變化', '歷程'], reflection: '有哪些條件正在改變？先選一個可以調整的小步驟。' },
   { id: 'populus', latin: 'Populus', zh: '群眾', dots: '2222', keywords: ['群體', '承接', '環境影響'], reflection: '分辨自己的想法與他人的期待，再決定要回應什麼。' },

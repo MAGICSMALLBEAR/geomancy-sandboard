@@ -47,7 +47,7 @@
 | R02 | 開啟每張解讀的依據 | 對應正確 node／figure／宮位與來源 |
 | R03 | 切換 R、盾盤／十二宮、減少動畫 | underlying source/chart/reading 完全不變 |
 | R04 | 不支援 ruleVersion／contentVersion | 只讀封存，不執行目前引擎 |
-| R05 | 更換內容版本再開舊記錄 | 保留舊 reading 快照，不默默更新 |
+| R05 | 更換內容版本再開舊記錄 | 保留舊 reading 快照，不默默更新（`tests/unit/contentVersions.test.ts`、`tests/e2e/content.spec.ts`） |
 
 單元層測純手勢判定、reducer、匯入邊界；瀏覽器層測合成 click、IndexedDB 交易、導航與 service worker。用假 DB 測錯誤分支後，仍須跑真實瀏覽器 IDB 流程。不要為 CSS class 名稱寫脆弱快照。
 

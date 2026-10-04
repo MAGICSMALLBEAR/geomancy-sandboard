@@ -13,7 +13,7 @@ import { THEMES, type ArchiveEntry, type MotionSetting, type ThemeSetting } from
 import { formatDate } from '../../content/labels.ts';
 import { Dialog } from '../../components/Dialog.tsx';
 
-const APP_VERSION = '0.7.0';
+const APP_VERSION = '0.7.1';
 const MOTION_LABEL: Record<MotionSetting, string> = { system: '跟隨系統設定', reduce: '減少動態效果', full: '完整動態效果' };
 const THEME_LABEL: Record<ThemeSetting, { name: string; help: string }> = {
   sand: { name: '安靜沙盤', help: '自然沙色、立體沙面與凹痕，柔和安靜。' },

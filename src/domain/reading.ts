@@ -1,6 +1,7 @@
 import { RULE_VERSION, type Mothers, type NodeId } from './geomancy.ts';
 import { CONTENT_VERSION } from './catalog.ts';
 import { buildReadingV1, CONTENT_V1 } from './readingV1.ts';
+import { buildReadingV2, CONTENT_V2 } from './readingV2.ts';
 
 export type Question = {
   text: string; timeframe: string;
@@ -38,8 +39,9 @@ export type Reading = {
 /** Every content version this build can rebuild and verify. Add new ones; never remove or edit old ones (R05). */
 const BUILDERS: Record<ContentVersion, (mothers: Mothers, question: Question) => Reading> = {
   [CONTENT_V1]: buildReadingV1,
+  [CONTENT_V2]: buildReadingV2,
 };
-export type ContentVersion = typeof CONTENT_V1;
+export type ContentVersion = typeof CONTENT_V1 | typeof CONTENT_V2;
 export const isKnownContentVersion = (v: unknown): v is ContentVersion =>
   typeof v === 'string' && Object.prototype.hasOwnProperty.call(BUILDERS, v);
 
