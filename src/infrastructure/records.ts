@@ -1,5 +1,5 @@
 /** Pure draft/record transitions shared by the IndexedDB and in-memory repositories. */
-import { constructChart, sourceToMothers, RULE_VERSION, type CastSource } from '../domain/geomancy.ts';
+import { constructChart, pressFigure, sourceToMothers, RULE_VERSION, type CastSource } from '../domain/geomancy.ts';
 import { CONTENT_VERSION } from '../domain/catalog.ts';
 import { assertQuestion, buildReading, type Question } from '../domain/reading.ts';
 import type { Draft, ReadingRecord } from '../domain/contracts.ts';
@@ -21,12 +21,30 @@ export function newId(): string {
 
 export function newDraft(id: string, question: Question, method: CastMethod, now: string): Draft {
   try { assertQuestion(question); } catch (e) { throw toAppError(e); }
-  if (method !== 'dots' && method !== 'auto' && method !== 'quick' && method !== 'manual') throw new AppError('INVALID_STATE');
+  if (method !== 'dots' && method !== 'press' && method !== 'auto' && method !== 'quick' && method !== 'manual') throw new AppError('INVALID_STATE');
   return {
     schemaVersion: 1, id, revision: 0, createdAt: now, updatedAt: now,
     question: { text: question.text, timeframe: question.timeframe, topic: question.topic, targetHouse: question.targetHouse },
     ruleVersion: RULE_VERSION, contentVersion: CONTENT_VERSION,
-    method, confirmedCounts: [], preparedSource: null, state: 'casting',
+    method, confirmedCounts: [], ...(method === 'press' ? { confirmedPresses: [] } : {}), preparedSource: null, state: 'casting',
+  };
+}
+
+/** Long-press method: store one press's byte. The fourth press locks the source, like row 16 for dots. */
+export function withConfirmedPress(draft: Draft, expectedRevision: number, byte: number, now: string): Draft {
+  if (draft.revision !== expectedRevision) throw new AppError('REVISION_CONFLICT');
+  const presses = draft.confirmedPresses ?? [];
+  if (draft.method !== 'press' || draft.state !== 'casting' || presses.length >= 4) throw new AppError('INVALID_STATE');
+  try { pressFigure(byte); } catch (e) { throw toAppError(e); }
+  const confirmedPresses = [...presses, byte];
+  const done = confirmedPresses.length === 4;
+  return {
+    ...draft, confirmedPresses, revision: draft.revision + 1, updatedAt: now,
+    state: done ? 'ready-to-finalize' : 'casting',
+    preparedSource: done
+      ? { kind: 'press', algorithm: 'webcrypto-press-v1',
+          bytes: [confirmedPresses[0], confirmedPresses[1], confirmedPresses[2], confirmedPresses[3]] }
+      : null,
   };
 }
 
@@ -49,7 +67,7 @@ export function withConfirmedRow(draft: Draft, expectedRevision: number, count: 
 export function withPreparedSource(draft: Draft, expectedRevision: number, source: CastSource, now: string): Draft {
   if (draft.preparedSource) return draft;
   if (draft.revision !== expectedRevision) throw new AppError('REVISION_CONFLICT');
-  if (draft.method === 'dots' || source.kind !== draft.method || draft.state !== 'casting') {
+  if (draft.method === 'dots' || draft.method === 'press' || source.kind !== draft.method || draft.state !== 'casting') {
     throw new AppError('INVALID_STATE');
   }
   try { sourceToMothers(source); } catch (e) { throw toAppError(e); }

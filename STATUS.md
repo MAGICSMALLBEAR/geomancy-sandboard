@@ -1,6 +1,6 @@
 # 目前實際狀態
 
-最後更新：2026-10-03 · App 版本 0.6.0（測試版）
+最後更新：2026-10-04 · App 版本 0.7.0（測試版）
 
 **M0–M5 已實作，可在電腦瀏覽器從提問走到回顧記錄。0.4.0 依產品負責人試用回饋加入：點沙判定放寬、自動點沙、三種外觀主題、進階解讀（成事關係、點之道、證人與裁判、十二宮逐宮，草稿）。自動測試全部通過，含 Chromium、Edge、Firefox、Playwright WebKit 與模擬縮放。真機（iPhone／Android）、macOS Safari、讀屏尚未由人實測；M6 使用者試用與專家審校尚未開始。**
 
@@ -28,6 +28,16 @@
   - 新頁「十二宮與盤位」（`#/learn/houses`）：十六個位置的來源與入宮、十二宮常見觀察範圍、成事關係與點之道術語。
   - 新頁「推盤練習」（`#/learn/practice`）：自設四母象，分六步看女象、姪象、證人、裁判、調和者如何推出；可切換「先自己算再對答案」並計分。不存記錄、不用起卦亂數。
 
+- [x] **R05 內容版本凍結（2026-10-04，D27）**
+  - 原本只認得一個內容版本：依專家意見改文字並升版後，所有已存記錄都會被判為不支援、只能純文字封存。
+  - `zh-TW-basic-draft-v1` 的文字凍結在 `src/domain/readingV1.ts`；記錄以自己保存時的版本驗證與顯示。改文字的步驟見 [ENGINE-AND-DATA §10](docs/ENGINE-AND-DATA.md)。
+  - 新增 `tests/unit/contentVersions.test.ts`：修改目前的十六象與宮名文字後，舊記錄仍通過驗證、文字不變；竄改舊記錄仍被拒絕。
+
+- [x] **0.7.0（2026-10-04）四次長按**（D28）
+  - 第五種起卦方式：按住圓圈至少 1 秒、在圓圈內放開，放開時由裝置亂數取 1 個位元組決定一個母象，取到立即保存；四次後成盤。
+  - 短按、滑出圓圈、第二指、切到背景都不算也不取數；保存失敗用同一個結果重試；重新整理保留已完成的次數；鍵盤可按住空白鍵或 Enter。
+  - 來源 `kind: 'press'` 存四個位元組，不偽造點數；結果頁的母象依據寫明是第幾次長按與取到的值。舊版 App 匯入這類記錄會判為格式不正確。
+
 ## 測試網址
 
 **https://magicsmallbear.github.io/geomancy-sandboard/**（GitHub Pages，原始碼 [MAGICSMALLBEAR/geomancy-sandboard](https://github.com/MAGICSMALLBEAR/geomancy-sandboard)，見 DECISIONS D20）。
@@ -45,9 +55,9 @@
 | `npm run typecheck` | 通過，0 錯誤 |
 | `npm run lint` | 通過，0 錯誤 0 警告 |
 | `npm run test:core` | 10 通過／0 失敗；輸出在 [core-test-report.tap](docs/core-test-report.tap) |
-| `npm run test:unit` | 7 個檔案、73 項通過（十六象反轉／倒轉／對轉、65,536 盤確認裁判恰為八個偶數點象；手勢判定、點沙 reducer、自動點沙來源、Repository 在 fake-indexeddb 與記憶體兩種實作、匯入匯出邊界、成事關係各種情況、65,536 盤點之道性質、試用計時、圖片內容） |
-| `npm run build` | 成功；入口 JS gzip 149.37 KiB（目標 ≤250），precache 14 項 |
-| `npm run test:e2e` | 43 通過、1 略過（2026-10-03，含新增 `tests/e2e/learn.spec.ts` 3 項；縮放測試加入兩個新頁）（P05b 只在 WebKit 跑），Playwright Chromium 153.0.8010.12，對 production build（`vite preview`）執行 |
+| `npm run test:unit` | 9 個檔案、87 項通過（2026-10-04；四次長按、內容版本凍結 R05、十六象反轉／倒轉／對轉、65,536 盤確認裁判恰為八個偶數點象；手勢判定、點沙 reducer、自動點沙來源、Repository 在 fake-indexeddb 與記憶體兩種實作、匯入匯出邊界、成事關係各種情況、65,536 盤點之道性質、試用計時、圖片內容） |
+| `npm run build` | 成功；入口 JS gzip 151.60 KiB（目標 ≤250），precache 14 項 |
+| `npm run test:e2e` | 46 通過、1 略過（2026-10-04，含新增 `tests/e2e/press.spec.ts` 3 項；四次長按另在 Firefox、WebKit 各跑 3 項皆通過；2026-10-03 含新增 `tests/e2e/learn.spec.ts` 3 項；縮放測試加入兩個新頁）（P05b 只在 WebKit 跑），Playwright Chromium 153.0.8010.12，對 production build（`vite preview`）執行 |
 | `PW_EDGE=1 npx playwright test --project=msedge` | 40 通過、1 略過，本機安裝的 Microsoft Edge 154.0.4258.48 |
 | `PW_ENGINES=1 npx playwright test` | 120 通過、3 略過：Chromium、Firefox 155.0、WebKit 26.6（Playwright 的 Windows 版，不等於 macOS／iOS Safari）。需先 `npx playwright install firefox webkit` |
 

@@ -3,7 +3,7 @@ import type { CastSource } from '../domain/geomancy.ts';
 import type { Question } from '../domain/reading.ts';
 import type { Draft, ReadingRecord } from '../domain/contracts.ts';
 import { AppError } from './errors.ts';
-import { newDraft, newId, recordFromDraft, withConfirmedRow, withNotes, withPreparedSource, type CastMethod } from './records.ts';
+import { newDraft, newId, recordFromDraft, withConfirmedPress, withConfirmedRow, withNotes, withPreparedSource, type CastMethod } from './records.ts';
 
 export type MotionSetting = 'system' | 'reduce' | 'full';
 /** Visual themes (DECISIONS D23). Display only: never part of a record or an export. */
@@ -43,6 +43,7 @@ export interface Repository {
   loadDraft(id: string): Promise<Draft | null>;
   discardDraft(id: string): Promise<void>;
   confirmRow(id: string, expectedRevision: number, count: number): Promise<Draft>;
+  confirmPress(id: string, expectedRevision: number, byte: number): Promise<Draft>;
   prepareSource(id: string, expectedRevision: number, source: CastSource): Promise<Draft>;
   finalizeDraft(id: string): Promise<ReadingRecord>;
   getReading(id: string): Promise<ReadingRecord | null>;
@@ -93,6 +94,11 @@ export class MemoryRepository implements Repository {
   async discardDraft(id: string) { this.drafts.delete(id); }
   async confirmRow(id: string, expectedRevision: number, count: number) {
     const d = withConfirmedRow(this.draft(id), expectedRevision, count, this.clock());
+    this.drafts.set(id, d);
+    return structuredClone(d);
+  }
+  async confirmPress(id: string, expectedRevision: number, byte: number) {
+    const d = withConfirmedPress(this.draft(id), expectedRevision, byte, this.clock());
     this.drafts.set(id, d);
     return structuredClone(d);
   }

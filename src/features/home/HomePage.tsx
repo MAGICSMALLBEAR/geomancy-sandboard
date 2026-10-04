@@ -37,7 +37,8 @@ export function HomePage() {
           <h2>未完成的占問</h2>
           <p className="question-text">{draft.question.text}</p>
           <p className="muted">{METHOD_LABEL[draft.method]}
-            {draft.method === 'dots' && `・已確認 ${draft.confirmedCounts.length}／16 列`}</p>
+            {draft.method === 'dots' && `・已確認 ${draft.confirmedCounts.length}／16 列`}
+            {draft.method === 'press' && `・已完成 ${draft.confirmedPresses?.length ?? 0}／4 次`}</p>
           <Link className="button" to={`/cast/${draft.id}`}>繼續起卦</Link>
         </section>
       )}

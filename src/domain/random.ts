@@ -13,6 +13,16 @@ export function drawQuickSource(fill: Fill = deviceFill): Extract<CastSource, { 
   return { kind: 'quick', algorithm: 'webcrypto-16bits-v1', bytes: [bytes[0], bytes[1]] };
 }
 
+/**
+ * Four long presses: one byte per completed press, drawn in the release handler and saved before the next press.
+ * How long the press lasted never enters the draw; it only drives the animation.
+ */
+export function drawPressByte(fill: Fill = deviceFill): number {
+  const bytes = new Uint8Array(1);
+  fill(bytes);
+  return bytes[0];
+}
+
 /** Automatic sand. Same rule as `drawQuickSource`: one call, from the button handler only, saved before display. */
 export function drawAutoSource(fill: Fill = deviceFill): Extract<CastSource, { kind: 'auto' }> {
   const bytes = new Uint8Array(16);

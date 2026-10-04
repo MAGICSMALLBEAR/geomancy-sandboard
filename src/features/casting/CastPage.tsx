@@ -11,6 +11,7 @@ import { DotsCasting } from './DotsCasting.tsx';
 import { QuickCasting } from './QuickCasting.tsx';
 import { AutoCasting, AutoSandShow } from './AutoCasting.tsx';
 import { ManualCasting } from './ManualCasting.tsx';
+import { PressCasting } from './PressCasting.tsx';
 import { clearPending, completeCast, keepAsPending } from './pending.ts';
 
 type Load =
@@ -130,6 +131,8 @@ export function CastPage() {
     );
   } else if (draft.method === 'dots') {
     body = <DotsCasting draft={draft} onReady={ready => void finalize(ready, null)} onGone={() => setLoad({ status: 'missing' })} />;
+  } else if (draft.method === 'press') {
+    body = <PressCasting draft={draft} onReady={ready => void finalize(ready, null)} onGone={() => setLoad({ status: 'missing' })} />;
   } else if (draft.method === 'auto') {
     body = <AutoCasting onSource={source => void finalize(draft, source, true)} />;
   } else if (draft.method === 'quick') {

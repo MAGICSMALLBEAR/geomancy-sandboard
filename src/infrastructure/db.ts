@@ -4,7 +4,7 @@ import type { CastSource } from '../domain/geomancy.ts';
 import type { Question } from '../domain/reading.ts';
 import type { Draft, ReadingRecord } from '../domain/contracts.ts';
 import { AppError, toAppError } from './errors.ts';
-import { newDraft, newId, recordFromDraft, withConfirmedRow, withNotes, withPreparedSource, type CastMethod } from './records.ts';
+import { newDraft, newId, recordFromDraft, withConfirmedPress, withConfirmedRow, withNotes, withPreparedSource, type CastMethod } from './records.ts';
 import { DEFAULT_SETTINGS, FEEDBACK_EVENT_LIMIT, THEMES, sortNewestFirst, systemClock, trimEvents,
   type ArchiveEntry, type ThemeSetting, type Clock, type FeedbackEntry, type Repository, type Settings } from './repository.ts';
 
@@ -98,6 +98,16 @@ export class IdbRepository implements Repository {
       const current = await store.get(id);
       if (!current) throw new AppError('NOT_FOUND');
       const next = withConfirmedRow(current, expectedRevision, count, this.clock());
+      await store.put(next);
+      return next;
+    });
+  }
+  confirmPress(id: string, expectedRevision: number, byte: number) {
+    return this.run(['drafts'], 'readwrite', async tx => {
+      const store = tx.objectStore('drafts');
+      const current = await store.get(id);
+      if (!current) throw new AppError('NOT_FOUND');
+      const next = withConfirmedPress(current, expectedRevision, byte, this.clock());
       await store.put(next);
       return next;
     });

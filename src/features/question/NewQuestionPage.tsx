@@ -13,6 +13,7 @@ const TEXT_MAX = 500, TIMEFRAME_MAX = 80;
 const TIMEFRAMES = ['未來一個月', '未來三個月'];
 const METHOD_HELP: Record<CastMethod, string> = {
   dots: '在沙面上點十六列，每列的奇偶決定一點或兩點。最有操作感，約需幾分鐘。',
+  press: '按住沙盤四次，每次放開時由裝置亂數決定一個母象。比點沙快，仍保留一點儀式感。',
   auto: '不想自己點？按一次，由裝置亂數決定每列落下幾粒沙，再看著沙子自動落下、化約成四個母象。',
   quick: '按一次，由裝置亂數直接產生四個母象。',
   manual: '你已經用紙筆或實體沙盤起好卦，直接輸入四個母象。',
@@ -91,7 +92,8 @@ export function NewQuestionPage() {
         <h1>你有一筆尚未完成的占問</h1>
         <p className="question-text">{existing.question.text}</p>
         <p className="muted">{METHOD_LABEL[existing.method]}
-          {existing.method === 'dots' && `・已確認 ${existing.confirmedCounts.length}／16 列`}</p>
+          {existing.method === 'dots' && `・已確認 ${existing.confirmedCounts.length}／16 列`}
+          {existing.method === 'press' && `・已完成 ${existing.confirmedPresses?.length ?? 0}／4 次`}</p>
         <p>一次只保留一筆進行中的占問。要繼續它，還是放棄它並開始新的？</p>
         <div className="dialog-actions">
           <Link className="button primary" to={`/cast/${existing.id}`}>繼續這筆占問</Link>
@@ -157,7 +159,7 @@ export function NewQuestionPage() {
       <fieldset className="field">
         <legend>起卦方式</legend>
         <div className="choice-col">
-          {(['dots', 'auto', 'quick', 'manual'] as CastMethod[]).map(option => (
+          {(['dots', 'press', 'auto', 'quick', 'manual'] as CastMethod[]).map(option => (
             <label key={option} className="choice">
               <input type="radio" name="method" checked={method === option} onChange={() => setMethod(option)} />
               <span><strong>{METHOD_LABEL[option]}</strong><br />{METHOD_HELP[option]}</span>

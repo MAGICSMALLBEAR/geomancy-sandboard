@@ -8,7 +8,7 @@
 |---|---|---|
 | `schemaVersion` | `1` | 儲存與匯出格式；破壞相容性需遷移 |
 | `ruleVersion` | `western-sequential-v1` | 算法、順序入宮、解讀技法的集合 |
-| `contentVersion` | `zh-TW-basic-draft-v1` | 中文象義與規則文案版本 |
+| `contentVersion` | `zh-TW-basic-draft-v1` | 中文象義與規則文案版本；已發布的版本凍結，改文字要新增版本（§10） |
 | `scope` | `basic-symbolic` | 本版只含基礎象徵解讀 |
 | `reviewStatus` | `editorial-draft` | 不得自行改成已審核 |
 
@@ -24,10 +24,13 @@
 | `auto` | `algorithm='webcrypto-counts-v1'`；`counts` 長度 16，每數為 5–20 的整數 | 與 `dots` 相同：每數 `n%2`，每連續四數為一母 |
 | `quick` | `algorithm='webcrypto-16bits-v1'`；`bytes` 恰好兩個 0–255 整數 | 第一 byte 高位至低位，再第二 byte；每四位一母 |
 | `manual` | `mothers` 恰好四個合法 Figure | 複製為四母象，不臆造 counts |
+| `press` | `algorithm='webcrypto-press-v1'`；`bytes` 恰好四個 0–255 整數 | 第 i 個 byte 的最高四位（bit 7→4）由上到下為第 i 母象；不臆造 counts |
 
 快速模式一次呼叫 `getRandomValues(new Uint8Array(2))`。例如 `[0xAC,0xF0]` 對應位元 `1010 1100 1111 0000`，圖式依序為 `1212,1122,1111,2222`。均勻的 16 位輸入沒有模除偏差；這是軟體轉換性質，不代表人的點沙行為均勻。
 
 自動點沙（2026-10-01 新增，DECISIONS D22）一次呼叫 `getRandomValues(new Uint8Array(16))`，每列粒數為 `5 + (byte & 15)`。低 4 位元均勻，所以 5–20 每個值機率相同，奇偶各半，沒有模除偏差。舊版 App 不認得 `auto`，匯入這類記錄會判為格式不正確，不會進入一般記錄。
+
+四次長按（2026-10-04 新增，DECISIONS D28）每次完整長按放開時呼叫一次 `getRandomValues(new Uint8Array(1))`，取得的 byte 立刻以 `confirmPress` 存入草稿的 `confirmedPresses`，第四次後鎖定為來源。按住時間只決定手勢是否成立（至少 1000 ms、在圓圈內放開、單指），從不進入亂數。保存失敗時重試同一個 byte，不再取數。舊版 App 不認得 `press`，匯入這類記錄會判為格式不正確。
 
 亂數來源只在明確的起卦 action 呼叫；排盤、閱讀結果、動畫、重新整理、React render/effect 都不能呼叫。`random.ts` 是外部取樣邊界，`geomancy.ts` 不含亂數、時間、DOM 或 I/O。測試可注入固定 bytes；正式介面不能讓 debug fixture 冒充隨機起卦。
 
@@ -227,3 +230,21 @@ deleteReading(id): Promise<void>
 | `IMPORT_TOO_LARGE` | 檔案超過本版容量限制 | 提示分割備份 |
 
 在記錄技術錯誤時只收錯誤碼和版本。問題文字、notes、完整備份不寫到 console、錯誤上報或 URL。
+
+## 10. 新增內容版本（專家審校後改文字）
+
+基礎解讀存進每一筆記錄，匯入與開啟時會用同一版本重組文字逐字比對。所以**已發布的內容版本永遠不能改**，改文字一律新增版本（ACCEPTANCE R05）。
+
+- `src/domain/readingV1.ts` 是 `zh-TW-basic-draft-v1` 的凍結副本，自帶十六象、十二宮與範本文字，不讀 `catalog.ts`。不要編輯。
+- `src/domain/catalog.ts` 是畫面目前使用的內容（學習區、進階解讀、圖示名稱），可以依審校結果修改。
+
+新增一版的步驟：
+
+1. 修改 `catalog.ts` 的文字，把 `CONTENT_VERSION` 改成新值（例如 `zh-TW-basic-reviewed-v2`）；全部條目都經專家確認時，`reviewStatus` 才能是 `expert-reviewed`。
+2. 新增 `readingV2.ts`：複製 `readingV1.ts` 的結構，凍結新版文字。
+3. 在 `reading.ts` 的 `BUILDERS` 加入新版本，`ContentVersion` 加入新值。舊版本不能移除。
+4. 新記錄自動使用新版本；舊記錄仍以自己的版本驗證，畫面顯示保存時的文字快照。
+5. 測試：在 `tests/unit/contentVersions.test.ts` 加一筆新版記錄，確認新舊兩版記錄都能通過 `checkRecord`、互相不能冒充；更新 `fixtures/` 若要以新版當例題。
+6. 在 `DECISIONS.md` 記錄改了哪些條目與審校者。
+
+舊版 App 不認得新版本的記錄，匯入時會轉為只讀封存（I06），這是預期行為。

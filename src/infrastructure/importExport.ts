@@ -4,8 +4,8 @@
  */
 import { constructChart, sourceToMothers, toDots, NODES, RULE_VERSION,
   type CastSource, type Chart, type Figure, type Mothers, type NodeId } from '../domain/geomancy.ts';
-import { CONTENT_VERSION, FIGURES } from '../domain/catalog.ts';
-import { assertQuestion, buildReading, type Claim, type Evidence, type Question, type Reading } from '../domain/reading.ts';
+import { FIGURES } from '../domain/catalog.ts';
+import { assertQuestion, buildReading, isKnownContentVersion, type Claim, type ContentVersion, type Evidence, type Question, type Reading } from '../domain/reading.ts';
 import type { ExportEnvelope, ReadingRecord } from '../domain/contracts.ts';
 import { NOTES_MAX, newId } from './records.ts';
 import type { AppErrorCode } from './errors.ts';
@@ -75,6 +75,11 @@ function readSource(v: unknown): CastSource {
     const counts = own(o, 'counts');
     if (!Array.isArray(counts)) bad('自動點沙來源缺少 16 列數量');
     source = { kind, algorithm: own(o, 'algorithm') as 'webcrypto-counts-v1', counts: Array.from(counts as unknown[]) as number[] };
+  } else if (kind === 'press') {
+    const bytes = own(o, 'bytes');
+    if (!Array.isArray(bytes) || bytes.length !== 4) bad('四次長按來源需要四個位元組');
+    const b = bytes as number[];
+    source = { kind, algorithm: own(o, 'algorithm') as 'webcrypto-press-v1', bytes: [b[0], b[1], b[2], b[3]] };
   } else if (kind === 'quick') {
     const bytes = own(o, 'bytes');
     if (!Array.isArray(bytes) || bytes.length !== 2) bad('快速來源需要兩個位元組');
@@ -114,21 +119,21 @@ function readClaim(v: unknown): Claim {
   return { claimId: claimId as string, ruleId: ruleId as string, kind: kind as Claim['kind'], title: title as string,
     text: text as string, evidence: (evidence as unknown[]).map(readEvidence), sourceIds: [...(sourceIds as string[])] };
 }
-function readReading(v: unknown): Reading {
+function readReading(v: unknown, version: ContentVersion): Reading {
   if (!isObj(v)) bad('缺少解讀快照');
-  const o = v as Obj, claims = own(o, 'claims');
-  if (own(o, 'ruleVersion') !== RULE_VERSION || own(o, 'contentVersion') !== CONTENT_VERSION ||
-      own(o, 'scope') !== 'basic-symbolic' || own(o, 'reviewStatus') !== 'editorial-draft') bad('解讀快照的版本欄位與記錄不一致');
+  const o = v as Obj, claims = own(o, 'claims'), reviewStatus = own(o, 'reviewStatus');
+  if (own(o, 'ruleVersion') !== RULE_VERSION || own(o, 'contentVersion') !== version || own(o, 'scope') !== 'basic-symbolic' ||
+      (reviewStatus !== 'editorial-draft' && reviewStatus !== 'expert-reviewed')) bad('解讀快照的版本欄位與記錄不一致');
   if (!Array.isArray(claims) || claims.length > 16) bad('解讀段落過多');
-  return { ruleVersion: RULE_VERSION, contentVersion: CONTENT_VERSION, scope: 'basic-symbolic',
-    reviewStatus: 'editorial-draft', claims: (claims as unknown[]).map(readClaim) };
+  return { ruleVersion: RULE_VERSION, contentVersion: version, scope: 'basic-symbolic',
+    reviewStatus: reviewStatus as Reading['reviewStatus'], claims: (claims as unknown[]).map(readClaim) };
 }
 
 /**
- * Strict validation for a record that claims the current schema/rule/content versions.
+ * Strict validation for a record that claims the current schema/rule version and a content version this build knows.
  * Returns a freshly built object; throws Reject with a human-readable reason otherwise.
  */
-function readKnownRecord(o: Obj): ReadingRecord {
+function readKnownRecord(o: Obj, version: ContentVersion): ReadingRecord {
   const id = own(o, 'id'), revision = own(o, 'revision'), createdAt = own(o, 'createdAt'), updatedAt = own(o, 'updatedAt');
   if (typeof id !== 'string' || !UUID.test(id)) bad('記錄 ID 不是 UUID');
   if (!Number.isSafeInteger(revision) || (revision as number) < 0) bad('revision 必須是非負整數');
@@ -147,9 +152,9 @@ function readKnownRecord(o: Obj): ReadingRecord {
   for (const node of NODES) {
     if (toDots(readFigure(own(rawChart as Obj, node), `盤位 ${node}`)) !== toDots(chart[node])) mismatch(`盤位 ${node} 與原始來源不一致`);
   }
-  // Same content version => the stored text must be exactly what this build composes.
-  const reading = readReading(own(o, 'reading'));
-  if (JSON.stringify(reading) !== JSON.stringify(canonicalReading(buildReading(mothers, question)))) {
+  // Known content version => the stored text must be exactly what that version composes, old versions included.
+  const reading = readReading(own(o, 'reading'), version);
+  if (JSON.stringify(reading) !== JSON.stringify(canonicalReading(buildReading(mothers, question, version)))) {
     mismatch('解讀文字或依據與此內容版本不一致');
   }
   const notes = own(o, 'notes');
@@ -159,7 +164,7 @@ function readKnownRecord(o: Obj): ReadingRecord {
   const record: ReadingRecord = {
     schemaVersion: 1, id: id as string, revision: revision as number,
     createdAt: createdAt as string, updatedAt: updatedAt as string,
-    ruleVersion: RULE_VERSION, contentVersion: CONTENT_VERSION,
+    ruleVersion: RULE_VERSION, contentVersion: version,
     question, source, mothers, chart, reading, notes: notes as string, integrity: 'verified',
   };
   const origin = own(o, 'importOrigin');
@@ -184,6 +189,7 @@ const canonicalSource = (s: CastSource): CastSource =>
   s.kind === 'dots' ? { kind: 'dots', counts: [...s.counts] }
   : s.kind === 'auto' ? { kind: 'auto', algorithm: s.algorithm, counts: [...s.counts] }
   : s.kind === 'quick' ? { kind: 'quick', algorithm: s.algorithm, bytes: [s.bytes[0], s.bytes[1]] }
+  : s.kind === 'press' ? { kind: 'press', algorithm: s.algorithm, bytes: [s.bytes[0], s.bytes[1], s.bytes[2], s.bytes[3]] }
   : { kind: 'manual', mothers: s.mothers.map(canonicalFigure) as unknown as Mothers };
 
 /** Fixed key order so two equal records always serialise identically. */
@@ -209,10 +215,11 @@ export function checkRecord(raw: unknown): RecordCheck {
   try {
     if (!isObj(raw)) bad('記錄不是物件');
     const o = raw as Obj;
-    if (own(o, 'schemaVersion') !== 1 || own(o, 'ruleVersion') !== RULE_VERSION || own(o, 'contentVersion') !== CONTENT_VERSION) {
+    const version = own(o, 'contentVersion');
+    if (own(o, 'schemaVersion') !== 1 || own(o, 'ruleVersion') !== RULE_VERSION || !isKnownContentVersion(version)) {
       throw new Reject('UNSUPPORTED_VERSION', '版本不支援');
     }
-    return { ok: true, record: readKnownRecord(o) };
+    return { ok: true, record: readKnownRecord(o, version) };
   } catch (e) {
     if (e instanceof Reject) return { ok: false, code: e.code, reason: e.message };
     return { ok: false, code: 'IMPORT_INVALID', reason: '記錄格式不正確' };

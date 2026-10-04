@@ -69,11 +69,21 @@ export type CastSource =
   | { kind: 'quick'; algorithm: 'webcrypto-16bits-v1'; bytes: readonly [number, number] }
   | { kind: 'manual'; mothers: Mothers }
   /** Automatic sand: device randomness picks each row's dot count once; parity works as in `dots`. */
-  | { kind: 'auto'; algorithm: 'webcrypto-counts-v1'; counts: readonly number[] };
+  | { kind: 'auto'; algorithm: 'webcrypto-counts-v1'; counts: readonly number[] }
+  /** Four long presses: each completed press draws one device byte; its top four bits are that mother. */
+  | { kind: 'press'; algorithm: 'webcrypto-press-v1'; bytes: readonly [number, number, number, number] };
 
 /** Row counts drawn by the automatic method: 5 + (byte & 15), so odd and even are equally likely. */
 export const AUTO_MIN_DOTS = 5;
 export const AUTO_MAX_DOTS = 20;
+
+const isByte = (x: unknown): x is number => Number.isInteger(x) && (x as number) >= 0 && (x as number) <= 255;
+
+/** One long press: the top four bits of its byte, highest first (fire row on top). */
+export function pressFigure(byte: number): Figure {
+  if (!isByte(byte)) throw new Error('INVALID_RANDOM_BYTES');
+  return [7, 6, 5, 4].map(shift => (byte >> shift) & 1) as unknown as Figure;
+}
 
 export function sourceToMothers(source: CastSource): Mothers {
   if (!source || typeof source !== 'object') throw new Error('INVALID_SOURCE');
@@ -88,6 +98,13 @@ export function sourceToMothers(source: CastSource): Mothers {
       throw new Error('INVALID_RANDOM_BYTES');
     }
     return mothersFromCounts(source.counts);
+  }
+  if (source.kind === 'press') {
+    if (source.algorithm !== 'webcrypto-press-v1' || !Array.isArray(source.bytes) || source.bytes.length !== 4 ||
+        !Array.from(source.bytes).every(isByte)) {
+      throw new Error('INVALID_RANDOM_BYTES');
+    }
+    return source.bytes.map(pressFigure) as unknown as Mothers;
   }
   if (source.kind === 'quick') {
     if (source.algorithm !== 'webcrypto-16bits-v1' || !Array.isArray(source.bytes) ||

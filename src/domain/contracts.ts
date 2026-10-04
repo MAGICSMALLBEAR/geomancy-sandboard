@@ -1,6 +1,6 @@
 /** Application contracts. Persistence, migration and import validators are still to be built. */
 import type { CastSource, Chart, Mothers } from './geomancy.ts';
-import type { Question, Reading } from './reading.ts';
+import type { ContentVersion, Question, Reading } from './reading.ts';
 
 export interface ReadingRecord {
   schemaVersion: 1;
@@ -9,7 +9,7 @@ export interface ReadingRecord {
   createdAt: string;
   updatedAt: string;
   ruleVersion: 'western-sequential-v1';
-  contentVersion: 'zh-TW-basic-draft-v1';
+  contentVersion: ContentVersion;
   question: Question;
   source: CastSource;
   mothers: Mothers;
@@ -27,9 +27,11 @@ export interface Draft {
   updatedAt: string;
   question: Question;
   ruleVersion: 'western-sequential-v1';
-  contentVersion: 'zh-TW-basic-draft-v1';
-  method: 'dots' | 'auto' | 'quick' | 'manual';
+  contentVersion: ContentVersion;
+  method: 'dots' | 'press' | 'auto' | 'quick' | 'manual';
   confirmedCounts: number[];
+  /** Long-press method: one saved device byte per completed press. */
+  confirmedPresses?: number[];
   /** auto/quick/manual data captured once; set before finalization, then never redraw on retry. */
   preparedSource: CastSource | null;
   state: 'casting' | 'ready-to-finalize';

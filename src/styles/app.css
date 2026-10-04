@@ -411,3 +411,17 @@ details[open] > summary::before { content: "▾ "; }
 .practice-check .is-wrong { color: var(--error); font-weight: 600; }
 .practice-detail { margin-top: 12px; }
 h2[tabindex="-1"]:focus { outline: none; }
+
+/* Four long presses (D28): one round pad; the ring fills while held. */
+.press-stage { display: flex; justify-content: center; padding: 12px 0; }
+.press-pad {
+  position: relative; width: min(64vw, 240px); aspect-ratio: 1; max-width: 100%; border-radius: 50%; padding: 0;
+  border: 2px solid var(--accent); background: var(--sand-base); box-shadow: var(--tray-shadow); color: var(--text);
+  touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: pointer;
+}
+.press-pad:disabled { cursor: default; opacity: 0.7; }
+.press-pad svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.press-track { fill: none; stroke: var(--line); stroke-width: 6; }
+.press-ring { fill: none; stroke: var(--accent); stroke-width: 8; stroke-linecap: round; }
+.press-label { position: relative; font-size: 1.3rem; font-weight: 700; }
+.press-pad.is-full .press-label { color: var(--accent); }

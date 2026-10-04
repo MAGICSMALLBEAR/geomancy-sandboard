@@ -8,6 +8,10 @@ export function Derivation({ node, chart, source }: { node: NodeId; chart: Chart
     const index = Number(node[1]) - 1;
     if (source.kind === 'quick') return <p>數位亂數來源：由裝置亂數一次產生的十六個位元，每四個位元組成一個母象。</p>;
     if (source.kind === 'manual') return <p>手動設定：這個母象由你直接輸入。</p>;
+    if (source.kind === 'press') {
+      return <p>四次長按：第{ORDINAL[index]}次長按放開時，由裝置亂數取一個位元組（{source.bytes[index]}），
+        前四個位元由上到下決定四行的一點或兩點。按多久不影響結果。</p>;
+    }
     const verb = source.kind === 'auto' ? '裝置亂數落下' : '點了';
     return (
       <>

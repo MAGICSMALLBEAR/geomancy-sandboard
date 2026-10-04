@@ -10,7 +10,7 @@ export const NODE_ORDER = ['M1', 'M2', 'M3', 'M4', 'D1', 'D2', 'D3', 'D4', 'N1',
 /** The fixture's four mothers by catalogue name, for the manual method. */
 export const FIXTURE_MOTHER_NAMES = ['少年／Puer', '龍首／Caput Draconis', '悲傷／Tristitia', '白／Albus'];
 
-type Method = '十六列點沙' | '自動點沙（裝置亂數）' | '快速起卦（裝置亂數）' | '手動輸入四母象';
+type Method = '十六列點沙' | '四次長按（裝置亂數）' | '自動點沙（裝置亂數）' | '快速起卦（裝置亂數）' | '手動輸入四母象';
 export async function startCast(page: Page, options: { text?: string; method: Method; work?: boolean }) {
   await page.goto('./#/new');
   await page.getByLabel('你想問什麼？').fill(options.text ?? fixture.question.text);
