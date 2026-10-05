@@ -34,8 +34,8 @@ export const ROLE_NOTES: { title: string; nodes: readonly NodeId[]; text: string
 ];
 
 /**
- * Planetary rulers (source G09). Two figures per planet, the nodes for Caput/Cauda Draconis. Signs and elements are
- * deliberately left out: traditions disagree and no checked source was available (DECISIONS D26, D33).
+ * Planetary rulers (source G09). Two figures per planet, the nodes for Caput/Cauda Draconis. Signs and elements,
+ * where traditions disagree, are in correspondences.ts with every listed version (DECISIONS D33, D36).
  */
 export const PLANET: Record<string, { zh: string; latin: string }> = {
   via: { zh: '月亮', latin: 'Moon' }, populus: { zh: '月亮', latin: 'Moon' },

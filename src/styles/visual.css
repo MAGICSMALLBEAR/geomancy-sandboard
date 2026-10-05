@@ -241,3 +241,14 @@ button.primary:not(:disabled):active, .button.primary:active { transform: transl
 .focus-tips { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 10px 0 0; }
 .focus-tips li { padding: 2px 10px; border-radius: 999px; border: 1px dashed var(--ornament); font-size: 0.9rem; color: var(--muted); }
 .original-text { white-space: pre-wrap; }
+
+/* Correspondence tables: scroll sideways on narrow screens instead of overflowing the page. */
+.table-scroll { overflow-x: auto; margin: 8px 0; border: 1px solid var(--line); border-radius: 10px; background: var(--field); }
+.corr-table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+.corr-table th, .corr-table td { padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+.corr-table thead th { background: var(--accent-soft); font-weight: 700; vertical-align: bottom; }
+.corr-table td.is-different { background: color-mix(in srgb, var(--ornament) 16%, transparent); }
+.corr-figure { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; }
+.corr-inline { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.corr-inline li { padding: 2px 10px; border-radius: 999px; border: 1px solid var(--line); font-size: 0.9rem; }
+.corr-inline li.is-different { border-color: var(--ornament); background: color-mix(in srgb, var(--ornament) 14%, transparent); }

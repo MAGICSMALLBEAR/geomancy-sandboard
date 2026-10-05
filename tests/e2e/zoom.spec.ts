@@ -91,7 +91,7 @@ for (const scenario of SCENARIOS) {
     await page.getByRole('button', { name: '保存筆記' }).click();
     await expect(page.getByText('筆記已保存。')).toBeVisible();
 
-    for (const [hash, label] of [['journal', '日誌'], ['settings', '設定'], ['learn', '教學'], ['learn/example', '教學例題'], ['learn/houses', '十二宮與盤位'], ['learn/practice', '推盤練習'], ['learn/try', '試畫區'], ['learn/customs', '古典禁例']]) {
+    for (const [hash, label] of [['journal', '日誌'], ['settings', '設定'], ['learn', '教學'], ['learn/example', '教學例題'], ['learn/houses', '十二宮與盤位'], ['learn/practice', '推盤練習'], ['learn/try', '試畫區'], ['learn/customs', '古典禁例'], ['learn/correspondences', '對照表']]) {
       await page.goto(`./#/${hash}`);
       await expect(page.locator('h1').first()).toBeVisible();
       await check(label);

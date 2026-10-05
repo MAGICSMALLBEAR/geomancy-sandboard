@@ -15,7 +15,7 @@ import { hapticsSupported } from '../../app/haptics.ts';
 import { formatDate } from '../../content/labels.ts';
 import { Dialog } from '../../components/Dialog.tsx';
 
-const APP_VERSION = '0.9.0';
+const APP_VERSION = '0.10.0';
 const MOTION_LABEL: Record<MotionSetting, string> = { system: '跟隨系統設定', reduce: '減少動態效果', full: '完整動態效果' };
 type Message = { kind: 'ok' | 'error'; text: string } | null;
 

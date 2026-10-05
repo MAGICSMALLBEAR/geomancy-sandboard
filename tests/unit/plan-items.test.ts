@@ -6,6 +6,7 @@ import { FIGURES } from '../../src/domain/catalog.ts';
 import { assertQuestion, ORIGINAL_TEXT_MAX } from '../../src/domain/reading.ts';
 import { haltedChart } from '../../src/domain/advanced.ts';
 import { PLANET } from '../../src/content/learn.ts';
+import { ELEMENT_SYSTEMS, ZODIAC, elementAgreement } from '../../src/content/correspondences.ts';
 import { MemoryRepository } from '../../src/infrastructure/repository.ts';
 import { buildExportFiles, checkRecord, parseImport } from '../../src/infrastructure/importExport.ts';
 
@@ -77,5 +78,38 @@ describe('planetary rulers (G09)', () => {
     expect(counts.size).toBe(8);
     expect(PLANET['fortuna-major'].latin).toBe('Sun');
     expect(PLANET.carcer.latin).toBe('Saturn');
+  });
+});
+
+describe('zodiac and element tables (G11, G12)', () => {
+  test('every figure has both zodiac signs and all seven elements', () => {
+    for (const f of FIGURES) {
+      expect(ZODIAC[f.id].agrippa).toMatch(/座$/);
+      expect(ZODIAC[f.id].gerard).toMatch(/座$/);
+      for (const s of ELEMENT_SYSTEMS) expect(['fire', 'air', 'water', 'earth']).toContain(s.values[f.id]);
+    }
+    expect(ELEMENT_SYSTEMS.map(s => s.year)).toEqual(['1591', '1655', '1655', '1655', '1663', '1687', '1697']);
+  });
+
+  test('matches facts stated in the sources: Agrippa follows the planet; Gerard fills each sign as G11 lists', () => {
+    // Agrippa: both lunar figures in Cancer, both solar figures in Leo.
+    for (const id of ['via', 'populus']) expect(ZODIAC[id].agrippa).toBe('巨蟹座');
+    for (const id of ['fortuna-major', 'fortuna-minor']) expect(ZODIAC[id].agrippa).toBe('獅子座');
+    // Gerard of Cremona, read back from G11's sign-to-figure table.
+    const bySign = (sign: string) => FIGURES.filter(f => ZODIAC[f.id].gerard === sign).map(f => f.id).sort();
+    expect(bySign('牡羊座')).toEqual(['acquisitio']);
+    expect(bySign('金牛座')).toEqual(['fortuna-minor', 'laetitia']);
+    expect(bySign('雙子座')).toEqual(['puer', 'rubeus']);
+    expect(bySign('處女座')).toEqual(['caput-draconis', 'conjunctio']);
+    expect(bySign('天蠍座')).toEqual(['amissio', 'tristitia']);
+    expect(bySign('水瓶座')).toEqual(['fortuna-major']);
+  });
+
+  test('Cattan equals Agrippa vulgar; Fludd differs only in Cauda Draconis', () => {
+    const values = (id: string) => ELEMENT_SYSTEMS.find(s => s.id === id)!.values;
+    expect(values('agrippa-vulgar')).toEqual(values('cattan'));
+    expect(FIGURES.filter(f => values('fludd')[f.id] !== values('cattan')[f.id]).map(f => f.id)).toEqual(['cauda-draconis']);
+    expect(elementAgreement('carcer')).toEqual({ element: 'earth', same: 7 });
+    expect(elementAgreement('fortuna-major')).toEqual({ element: 'earth', same: 3 });
   });
 });

@@ -59,3 +59,18 @@ test('設定：震動回饋可開關並保留（預設關閉）', async ({ page 
   await page.reload();
   await expect(page.getByRole('checkbox', { name: /輕微震動/ })).toBeChecked();
 });
+
+test('對照表：行星、兩套星座與七套元素並列；十六象頁顯示星座與元素', async ({ page }) => {
+  await page.goto('./#/learn');
+  await page.getByRole('link', { name: /行星、星座與元素對照/ }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('行星、星座與元素對照');
+  const tables = page.locator('.corr-table');
+  await expect(tables).toHaveCount(2);
+  await expect(tables.nth(0).locator('tbody tr')).toHaveCount(16);
+  await expect(tables.nth(1).locator('thead th')).toHaveCount(8);
+  await page.goto('./#/learn/fortuna-major');
+  const section = page.getByRole('region', { name: '星座與元素' });
+  await expect(section).toContainText('獅子座');
+  await expect(section).toContainText('水瓶座');
+  await expect(section).toContainText('Cattan（1591）配土');
+});
