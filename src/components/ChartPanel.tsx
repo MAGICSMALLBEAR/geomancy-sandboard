@@ -5,6 +5,8 @@ import { NODE_LABEL, figureOf, houseOfNode } from '../content/labels.ts';
 import { Derivation } from './Derivation.tsx';
 import { FigureGlyph } from './FigureGlyph.tsx';
 import { ShieldChart } from './ShieldChart.tsx';
+import { HouseWheel } from './HouseWheel.tsx';
+import type { AspectResult } from '../domain/advanced.ts';
 
 type Props = {
   chart: Chart;
@@ -16,9 +18,11 @@ type Props = {
   onSkipAnimation: () => void;
   /** Way of the Points to highlight on the shield, if the reader asked for it. */
   path?: readonly NodeId[];
+  /** Drawn on the house wheel; omitted where no advanced reading exists. */
+  aspects?: AspectResult;
 };
 
-export function ChartPanel({ chart, source, targetHouse, selected, onSelect, animate, onSkipAnimation, path }: Props) {
+export function ChartPanel({ chart, source, targetHouse, selected, onSelect, animate, onSkipAnimation, path, aspects }: Props) {
   const [view, setView] = useState<'shield' | 'houses'>('shield');
   const [showReconciler, setShowReconciler] = useState(false);
   const detailRefs = useRef<Partial<Record<NodeId, HTMLLIElement | null>>>({});
@@ -76,6 +80,7 @@ export function ChartPanel({ chart, source, targetHouse, selected, onSelect, ani
         </ol>
       </>}
 
+      {view === 'houses' && aspects && <HouseWheel chart={chart} targetHouse={targetHouse} aspects={aspects} />}
       {view === 'houses' && (
         <ol className="house-grid">
           {HOUSE_NODES.map((node, i) => {

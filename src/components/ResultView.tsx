@@ -8,7 +8,8 @@ import { fromDots } from '../domain/geomancy.ts';
 import { FigureGlyph } from './FigureGlyph.tsx';
 import { ChartPanel } from './ChartPanel.tsx';
 import { AdvancedReading } from './AdvancedReading.tsx';
-import { buildAdvancedReading } from '../domain/advanced.ts';
+import { ASPECT_LABEL, PERFECTION_LABEL, buildAdvancedReading, type AdvancedReading as Advanced } from '../domain/advanced.ts';
+import { figureInfo } from '../domain/catalog.ts';
 
 type Props = {
   question: Question;
@@ -23,6 +24,42 @@ type Props = {
   notes?: ReactNode;
   banner?: ReactNode;
 };
+
+/** At-a-glance panel: the two witnesses meeting in the judge, with the main advanced signals. Same data as below. */
+function Verdict({ chart, advanced, onShowNode }: { chart: Chart; advanced: Advanced; onShowNode: (node: NodeId) => void }) {
+  const right = figureInfo(chart.RW), left = figureInfo(chart.LW), judge = figureInfo(chart.J);
+  const { perfection, aspects } = advanced;
+  const fig = (node: NodeId, label: string, info: typeof judge, big = false) => (
+    <button type="button" className={`verdict-figure link-button${big ? ' is-judge' : ''}`} onClick={() => onShowNode(node)}
+      aria-label={`${label}：${info.zh}／${info.latin}，在盤面上看`}>
+      <FigureGlyph figure={chart[node]} size={big ? 46 : 32} decorative />
+      <strong>{info.zh}</strong>
+      <span>{label}</span>
+    </button>
+  );
+  return (
+    <section className="verdict" aria-labelledby="verdict-title">
+      <div className="verdict-court">
+        {fig('RW', '右證人', right)}
+        <span className="verdict-op" aria-hidden="true">＋</span>
+        {fig('LW', '左證人', left)}
+        <span className="verdict-op" aria-hidden="true">→</span>
+        {fig('J', '裁判', judge, true)}
+      </div>
+      <div className="verdict-text">
+        <h2 id="verdict-title">裁判：{judge.zh}<span className="latin">{judge.latin}</span></h2>
+        <ul className="keyword-chips" aria-label="裁判的象徵主題">{judge.keywords.map(k => <li key={k}>{k}</li>)}</ul>
+        {perfection.status === 'checked' && (
+          <p><strong>成事關係：</strong>{perfection.hits.length
+            ? `找到${PERFECTION_LABEL[perfection.hits[0].mode]}${perfection.hits.length > 1 ? `等 ${perfection.hits.length} 種` : ''}`
+            : '不成事（四種方式都沒有出現）'}
+            {aspects.status === 'checked' && aspects.base && <>；宮位相位：{ASPECT_LABEL[aspects.base]}</>}</p>
+        )}
+        <p className="muted">完整說明與依據在下方。這是象徵性的觀察，不是預測。</p>
+      </div>
+    </section>
+  );
+}
 
 function ClaimCard({ claim, onShowNode, onEvidenceOpened }: { claim: Claim; onShowNode: (node: NodeId) => void; onEvidenceOpened?: () => void }) {
   const [open, setOpen] = useState(false);
@@ -106,11 +143,12 @@ export function ResultView({ question, dateLabel, source, chart, reading, animat
         <details className="scope-note">
           <summary>基礎象徵解讀・內容草稿</summary>
           <p>基礎解讀說明裁判、兩個證人、第 1 宮與你選的問題宮各自的象徵主題，並附上反思提示。
-            下方的進階解讀另外依傳統技法計算成事關係、點之道、證人與裁判，以及十二宮逐宮；它是象徵性的觀察，不是預測。
-            尚未包含相位等其他技法。中文文字是本產品的編輯草稿，尚未經地占專家逐條審校。重要決定仍需要實際資訊。</p>
+            下方的進階解讀另外依傳統技法計算成事關係、相位、象的重現、點之道、證人與裁判，以及十二宮逐宮；它是象徵性的觀察，不是預測。中文文字是本產品的編輯草稿，尚未經地占專家逐條審校。重要決定仍需要實際資訊。</p>
           <p className="muted">規則版本 {reading.ruleVersion}・內容版本 {reading.contentVersion}</p>
         </details>
       </header>
+
+      <Verdict chart={chart} advanced={advanced} onShowNode={showNode} />
 
       <div className="segmented result-tabs" role="group" aria-label="結果內容">
         <button type="button" aria-pressed={tab === 'reading'} onClick={() => setTab('reading')}>解讀</button>
@@ -122,7 +160,8 @@ export function ResultView({ question, dateLabel, source, chart, reading, animat
         <div className={`result-pane pane-chart${tab === 'chart' ? ' is-active' : ''}`}>
           <h2>盤面</h2>
           <ChartPanel chart={chart} source={source} targetHouse={question.targetHouse} selected={selected}
-            onSelect={setSelected} animate={animate} onSkipAnimation={onSkipAnimation} path={pathShown ? advanced.way.nodes : undefined} />
+            onSelect={setSelected} animate={animate} onSkipAnimation={onSkipAnimation} path={pathShown ? advanced.way.nodes : undefined}
+            aspects={advanced.aspects} />
         </div>
         <div className="result-side">
           <div className={`result-pane pane-reading${tab === 'reading' ? ' is-active' : ''}`}>

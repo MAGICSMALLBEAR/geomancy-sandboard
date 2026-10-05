@@ -7,7 +7,7 @@ import { HOUSE_NODES, PARENTS, toDots, type Chart, type NodeId } from './geomanc
 import { figureInfo, HOUSES } from './catalog.ts';
 import type { Question } from './reading.ts';
 
-export const ADVANCED_VERSION = 'zh-TW-advanced-draft-v1' as const;
+export const ADVANCED_VERSION = 'zh-TW-advanced-draft-v2' as const;
 
 type Info = ReturnType<typeof figureInfo>;
 const name = (f: Info) => `${f.zh}／${f.latin}`;
@@ -192,10 +192,125 @@ export function houseReadings(chart: Chart, quesited: number | null): HouseReadi
   });
 }
 
+// ── Aspects (G08): houses counted around the circle like astrological signs ───────────────────────────
+
+export type AspectKind = 'sextile' | 'square' | 'trine' | 'opposition';
+export const ASPECT_LABEL: Record<AspectKind, string> = {
+  sextile: '六分相（Sextile）', square: '四分相（Square）', trine: '三分相（Trine）', opposition: '對分相（Opposition）',
+};
+/** Supportive or tense, as commonly taught. A product summary of the tradition, not a verdict. */
+export const ASPECT_TONE: Record<AspectKind, 'easy' | 'hard'> = { sextile: 'easy', trine: 'easy', square: 'hard', opposition: 'hard' };
+const ASPECT_TEXT: Record<AspectKind, string> = {
+  sextile: '兩個領域之間有溫和的助力，需要主動去接。',
+  trine: '兩個領域之間互相支持，事情較容易順著走。',
+  square: '兩個領域之間有摩擦或拉扯，要付出力氣調整。',
+  opposition: '兩個領域彼此對立，常見拉鋸、正面相對或需要協商。',
+};
+
+/** Aspect between two houses by the number of houses apart (2/10 sextile, 3/9 square, 4/8 trine, 6 opposition). */
+export function aspectBetween(a: number, b: number): AspectKind | null {
+  const d = Math.min((b - a + 12) % 12, (a - b + 12) % 12);
+  return d === 2 ? 'sextile' : d === 3 ? 'square' : d === 4 ? 'trine' : d === 6 ? 'opposition' : null;
+}
+
+export type AspectHit = {
+  kind: AspectKind;
+  /** Where the figure sits and the significator's house it aspects. */
+  from: number;
+  to: number;
+  /** Whose figure: the querent's (house 1) or the quesited's. 'base' is the two significator houses themselves. */
+  who: 'base' | 'querent' | 'quesited';
+  text: string;
+};
+export type AspectResult =
+  | { status: 'no-quesited' }
+  | { status: 'checked'; quesited: number; base: AspectKind | null; baseText: string; hits: AspectHit[]; summary: string };
+
+export function findAspects(chart: Chart, quesited: number | null): AspectResult {
+  if (quesited === null) return { status: 'no-quesited' };
+  const q = quesited;
+  const base = aspectBetween(1, q);
+  const baseText = q === 1
+    ? '你選的問題宮就是第 1 宮，兩者是同一個宮位，不另看相位。'
+    : base
+      ? `第 1 宮與第 ${q} 宮相隔形成${ASPECT_LABEL[base]}：${ASPECT_TEXT[base]}這是宮位本身的關係，每次問這一宮都一樣，重點要看下面兩個象有沒有移到彼此的相位上。`
+      : `第 1 宮與第 ${q} 宮之間沒有主要相位（相鄰或相隔五宮）。宮位本身沒有直接的牽引，要看兩個象有沒有在別的宮位形成相位。`;
+
+  const hits: AspectHit[] = [];
+  const recurrences = (from: number) => {
+    const dots = toDots(houseFigure(chart, from));
+    return HOUSES.map((_, i) => i + 1).filter(h => h !== from && toDots(houseFigure(chart, h)) === dots);
+  };
+  const add = (who: 'querent' | 'quesited', at: number, target: number) => {
+    if (at === target) return;
+    const kind = aspectBetween(at, target);
+    if (!kind) return;
+    const owner = who === 'querent' ? '你的象（第 1 宮）' : `所問之事的象（第 ${q} 宮）`;
+    const figure = figureInfo(houseFigure(chart, at));
+    hits.push({ kind, from: at, to: target, who, text:
+      `${owner}「${name(figure)}」也出現在第 ${at} 宮，與第 ${target} 宮形成${ASPECT_LABEL[kind]}：${ASPECT_TEXT[kind]}` });
+  };
+  if (q !== 1) {
+    for (const h of recurrences(1)) add('querent', h, q);
+    for (const h of recurrences(q)) add('quesited', h, 1);
+  }
+  const easy = hits.filter(h => ASPECT_TONE[h.kind] === 'easy').length, hard = hits.length - easy;
+  const summary = q === 1
+    ? '問題宮與第 1 宮相同，相位不另作判斷。'
+    : hits.length === 0
+      ? '兩個代表象都沒有移到對方的相位上。相位只是輔助：沒有相位不代表沒有關係，請以上面的成事判斷為主。'
+      : `兩個代表象在別的宮位形成 ${hits.length} 個相位（助力 ${easy}、張力 ${hard}）。傳統上相位不算成事，而是說明雙方之間的氣氛：助力型讓過程較順，張力型表示需要磨合。`;
+  return { status: 'checked', quesited: q, base, baseText, hits, summary };
+}
+
+// ── Recurring figures: the same figure in several houses ties those areas together ───────────────────
+
+export type Recurrence = {
+  figure: Info;
+  houses: number[];
+  /** Which significators this figure belongs to. */
+  roles: ('querent' | 'quesited' | 'judge')[];
+  text: string;
+};
+
+export function findRecurrences(chart: Chart, quesited: number | null): Recurrence[] {
+  const groups = new Map<string, number[]>();
+  HOUSES.forEach((_, i) => {
+    const dots = toDots(chart[HOUSE_NODES[i]]);
+    groups.set(dots, [...(groups.get(dots) ?? []), i + 1]);
+  });
+  const judgeDots = toDots(chart.J);
+  const result: Recurrence[] = [];
+  for (const [dots, houses] of groups) {
+    const isJudge = dots === judgeDots;
+    if (houses.length < 2 && !isJudge) continue;
+    const figure = figureInfo(houseFigure(chart, houses[0]));
+    const roles: Recurrence['roles'] = [];
+    if (houses.includes(1)) roles.push('querent');
+    if (quesited !== null && quesited !== 1 && houses.includes(quesited)) roles.push('quesited');
+    if (isJudge) roles.push('judge');
+    const where = houses.map(h => `第 ${h} 宮（${HOUSES[h - 1]}）`).join('、');
+    const lead = houses.length > 1
+      ? `「${name(figure)}」出現在${where}，同一股「${figure.keywords[0]}」的力量把這 ${houses.length} 個領域串在一起。`
+      : `「${name(figure)}」只出現在${where}。`;
+    const notes = [
+      roles.includes('querent') && houses.length > 1 ? '這是你自己（第 1 宮）的象：它重現的地方，常被看作你會投入或被牽動的領域。' : '',
+      roles.includes('quesited') && houses.length > 1 ? '這是所問之事的象：它重現的地方，說明這件事還牽涉到哪些面向。' : '',
+      isJudge ? '它也是裁判的象：結論的性質在這些宮位落地，可以從這些領域觀察結果怎麼顯現。' : '',
+    ].filter(Boolean).join('');
+    result.push({ figure, houses, roles, text: lead + notes });
+  }
+  // Significators first, then by how often the figure recurs.
+  const weight = (r: Recurrence) => (r.roles.includes('querent') ? 4 : 0) + (r.roles.includes('quesited') ? 2 : 0) + (r.roles.includes('judge') ? 1 : 0);
+  return result.sort((a, b) => weight(b) - weight(a) || b.houses.length - a.houses.length || a.houses[0] - b.houses[0]);
+}
+
 export type AdvancedReading = {
   version: typeof ADVANCED_VERSION;
   reviewStatus: 'editorial-draft';
   perfection: PerfectionResult;
+  aspects: AspectResult;
+  recurrences: Recurrence[];
   way: WayOfPoints;
   court: string;
   houses: HouseReading[];
@@ -205,6 +320,8 @@ export function buildAdvancedReading(chart: Chart, question: Question): Advanced
   return {
     version: ADVANCED_VERSION, reviewStatus: 'editorial-draft',
     perfection: findPerfection(chart, question.targetHouse),
+    aspects: findAspects(chart, question.targetHouse),
+    recurrences: findRecurrences(chart, question.targetHouse),
     way: wayOfPoints(chart), court: courtReading(chart), houses: houseReadings(chart, question.targetHouse),
   };
 }

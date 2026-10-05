@@ -19,6 +19,19 @@ const METHOD_HELP: Record<CastMethod, string> = {
   manual: '你已經用紙筆或實體沙盤起好卦，直接輸入四個母象。',
 };
 
+/** Small decorative icons for the method cards. */
+function MethodIcon({ method }: { method: CastMethod }) {
+  return (
+    <svg className="method-icon" viewBox="0 0 34 34" aria-hidden="true">
+      {method === 'dots' && <><rect x="3" y="6" width="28" height="22" rx="5" />{[[10, 13], [19, 11], [14, 21], [24, 20]].map(([x, y]) => <circle key={x} className="fill" cx={x} cy={y} r="2.2" />)}</>}
+      {method === 'press' && <><circle cx="17" cy="17" r="13" /><circle cx="17" cy="17" r="7" /><circle className="fill" cx="17" cy="17" r="2.5" /></>}
+      {method === 'auto' && <><rect x="3" y="6" width="28" height="22" rx="5" /><path d="M10 3v5M17 2v6M24 3v5" />{[[10, 16], [17, 20], [24, 15]].map(([x, y]) => <circle key={x} className="fill" cx={x} cy={y} r="2.2" />)}</>}
+      {method === 'quick' && <path d="M19 3 8 19h8l-2 12 12-17h-8z" />}
+      {method === 'manual' && <><path d="M7 27 25 9l3 3-18 18H7z" /><path d="M21 13l3 3" /></>}
+    </svg>
+  );
+}
+
 export function NewQuestionPage() {
   const { repo, logEvent } = useApp();
   const navigate = useNavigate();
@@ -106,7 +119,8 @@ export function NewQuestionPage() {
 
   return (
     <form className="new-question" onSubmit={event => void submit(event)} noValidate>
-      <h1>新增占問</h1>
+      <h1 className="page-title">新增占問</h1>
+      <p className="page-lede">靜下心，把想問的事寫清楚。問題越具體，解讀越容易對照。</p>
 
       <div className="field">
         <label htmlFor="question">你想問什麼？</label>
@@ -158,14 +172,16 @@ export function NewQuestionPage() {
 
       <fieldset className="field">
         <legend>起卦方式</legend>
-        <div className="choice-col">
+        <div className="method-grid">
           {(['dots', 'press', 'auto', 'quick', 'manual'] as CastMethod[]).map(option => (
             <label key={option} className="choice">
               <input type="radio" name="method" checked={method === option} onChange={() => setMethod(option)} />
+              <MethodIcon method={option} />
               <span><strong>{METHOD_LABEL[option]}</strong><br />{METHOD_HELP[option]}</span>
             </label>
           ))}
         </div>
+        {method === 'dots' && <p className="hint">第一次點沙？可以先到<Link to="/learn/try">試畫區</Link>練習，不會保存。</p>}
       </fieldset>
 
       {error && <p className="notice is-error" role="alert">{ERROR_TEXT[error]}</p>}

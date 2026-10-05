@@ -1,6 +1,6 @@
 import { fromDots, HOUSE_NODES, type NodeId } from '../domain/geomancy.ts';
 import { HOUSES } from '../domain/catalog.ts';
-import { PERFECTION_LABEL, type AdvancedReading as Advanced } from '../domain/advanced.ts';
+import { ASPECT_LABEL, ASPECT_TONE, PERFECTION_LABEL, type AdvancedReading as Advanced } from '../domain/advanced.ts';
 import { NODE_LABEL } from '../content/labels.ts';
 import { sourceById } from '../content/sources.ts';
 import { FigureGlyph } from './FigureGlyph.tsx';
@@ -27,7 +27,8 @@ function Sources({ ids }: { ids: string[] }) {
 
 /** Advanced layer: recomputed from the chart on display, never stored (DECISIONS D24). */
 export function AdvancedReading({ advanced, onShowNode, pathShown, onTogglePath }: Props) {
-  const { perfection, way, court, houses } = advanced;
+  const { perfection, aspects, recurrences, way, court, houses } = advanced;
+  const showHouse = (h: number) => onShowNode(HOUSE_NODES[h - 1]);
   return (
     <section className="advanced-reading" aria-labelledby="advanced-title">
       <h2 id="advanced-title">進階解讀<span className="tag">草稿</span></h2>
@@ -59,6 +60,61 @@ export function AdvancedReading({ advanced, onShowNode, pathShown, onTogglePath 
           </>
         )}
         <Sources ids={['G06', 'E01']} />
+      </article>
+
+      <article className="card">
+        <h3>相位</h3>
+        {aspects.status === 'no-quesited' ? (
+          <p>相位看的是第 1 宮與問題宮之間的距離，以及兩個代表象移到哪裡。這次是一般反思，沒有選定問題宮，所以不判斷。</p>
+        ) : (
+          <>
+            <p className="muted">像占星一樣把十二宮排成一圈：相隔兩宮為六分相、三宮為四分相、四宮為三分相、六宮為對分相；相鄰或相隔五宮沒有主要相位。
+              相位不算成事，只說明雙方之間的氣氛。在「盤面 → 十二宮」可以看到連線。</p>
+            <p>{aspects.baseText}</p>
+            {aspects.hits.length > 0 && (
+              <ul className="aspect-list">
+                {aspects.hits.map((hit, i) => (
+                  <li key={i} className={`is-${ASPECT_TONE[hit.kind]}`}>
+                    <span className={`tone is-${ASPECT_TONE[hit.kind]}`}>{ASPECT_TONE[hit.kind] === 'easy' ? '助力' : '張力'}・{ASPECT_LABEL[hit.kind]}</span>
+                    <br />{hit.text}
+                    <br />
+                    <button type="button" className="link-button" onClick={() => showHouse(hit.from)}>看第 {hit.from} 宮</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p>{aspects.summary}</p>
+          </>
+        )}
+        <Sources ids={['G08', 'E01']} />
+      </article>
+
+      <article className="card">
+        <h3>象的重現</h3>
+        <p className="muted">同一個象出現在好幾個宮位時，傳統上把它看成一條線，把那些生活領域串在一起；裁判的象若也出現在宮位中，說明結論會在哪裡顯現。</p>
+        {recurrences.length === 0
+          ? <p>十二宮裡沒有重複出現的象，裁判的象也沒有出現在任何宮位：各個領域各自獨立，沒有特別被串起來的主題。</p>
+          : (
+            <ul className="recur-list">
+              {recurrences.map(r => (
+                <li key={r.figure.id}>
+                  <FigureGlyph figure={fromDots(r.figure.dots)} size={26} decorative />
+                  <div>
+                    <p>
+                      {r.roles.includes('querent') && <span className="tag">你自己的象</span>}
+                      {r.roles.includes('quesited') && <span className="tag">問題宮的象</span>}
+                      {r.roles.includes('judge') && <span className="tag">裁判的象</span>}
+                    </p>
+                    <p>{r.text}</p>
+                    <p>{r.houses.map(h => (
+                      <button key={h} type="button" className="link-button" onClick={() => showHouse(h)}>看第 {h} 宮</button>
+                    ))}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        <Sources ids={['G08', 'E01']} />
       </article>
 
       <article className="card">

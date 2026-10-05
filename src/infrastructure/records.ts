@@ -2,10 +2,11 @@
 import { constructChart, pressFigure, sourceToMothers, RULE_VERSION, type CastSource } from '../domain/geomancy.ts';
 import { CONTENT_VERSION } from '../domain/catalog.ts';
 import { assertQuestion, buildReading, type Question } from '../domain/reading.ts';
-import type { Draft, ReadingRecord } from '../domain/contracts.ts';
+import { OUTCOME_STATUSES, type Draft, type Outcome, type ReadingRecord } from '../domain/contracts.ts';
 import { AppError, toAppError } from './errors.ts';
 
 export const NOTES_MAX = 5000;
+export const OUTCOME_TEXT_MAX = 2000;
 export const ROW_MAX_DOTS = 4096;
 export type CastMethod = Draft['method'];
 
@@ -98,4 +99,18 @@ export function withNotes(record: ReadingRecord, expectedRevision: number, notes
   if (record.revision !== expectedRevision) throw new AppError('REVISION_CONFLICT');
   if (typeof notes !== 'string' || notes.length > NOTES_MAX) throw new AppError('INVALID_NOTES');
   return { ...record, notes, revision: record.revision + 1, updatedAt: now };
+}
+
+/** Add, replace or (with null) remove the follow-up. Same revision guard as notes. */
+export function withOutcome(record: ReadingRecord, expectedRevision: number, outcome: Omit<Outcome, 'recordedAt'> | null, now: string): ReadingRecord {
+  if (record.revision !== expectedRevision) throw new AppError('REVISION_CONFLICT');
+  const base = { ...record, revision: record.revision + 1, updatedAt: now };
+  if (outcome === null) {
+    delete base.outcome;
+    return base;
+  }
+  if (!OUTCOME_STATUSES.includes(outcome.status) || typeof outcome.text !== 'string' || outcome.text.length > OUTCOME_TEXT_MAX) {
+    throw new AppError('INVALID_OUTCOME');
+  }
+  return { ...base, outcome: { status: outcome.status, text: outcome.text, recordedAt: now } };
 }

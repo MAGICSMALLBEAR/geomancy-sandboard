@@ -1,6 +1,6 @@
 # 目前實際狀態
 
-最後更新：2026-10-05 · App 版本 0.7.1（測試版）
+最後更新：2026-10-05 · App 版本 0.8.0（測試版）
 
 **M0–M5 已實作，可在電腦瀏覽器從提問走到回顧記錄。0.4.0 依產品負責人試用回饋加入：點沙判定放寬、自動點沙、三種外觀主題、進階解讀（成事關係、點之道、證人與裁判、十二宮逐宮，草稿）。自動測試全部通過，含 Chromium、Edge、Firefox、Playwright WebKit 與模擬縮放。真機（iPhone／Android）、macOS Safari、讀屏尚未由人實測；M6 使用者試用與專家審校尚未開始。**
 
@@ -42,6 +42,13 @@
   - 新記錄的「問題所屬範圍」卡片不再說「本版尚未計算成就關係」，改為指向進階解讀的成事關係。其餘文字與 v1 相同。
   - 第一次實際升版：v1 舊記錄（含匯入的舊備份）照原樣顯示舊文字並通過驗證；v1、v2 互相不能冒充。新增 `tests/e2e/content.spec.ts`。
 
+- [x] **0.8.0（2026-10-05）視覺改版與補完功能**（D30–D32，產品負責人：畫面太簡略、提不起興趣；三種主題都保留由使用者選；補做尚未完成的功能）
+  - **視覺**：新增 `src/styles/visual.css`。三種主題各自有背景紋理、陰影與裝飾色；頁首固定並加入標誌與圖示；首頁改為主視覺（真實推導的盾盤動畫）、四階段流程、主題選擇卡（每張預覽用自己的主題繪製）、十六象一覽；結果頁頂端新增「右證人＋左證人→裁判」總覽與成事、相位摘要；新增占問頁的起卦方式改為圖示卡片。只用系統字型與內嵌 SVG，離線不受影響。
+  - **相位**：進階解讀 v2。第 1 宮與問題宮本身的相位，以及兩個代表象重現到其他宮時形成的相位（六分、三分為助力；四分、對分為張力）。「盤面 → 十二宮」新增十二宮圓盤與相位連線。
+  - **象的重現**：列出在十二宮出現兩次以上的象，以及裁判的象落在哪些宮，代表象優先。
+  - **試畫區**（`#/learn/try`）：起卦前練習點沙，可顯示點數，四列組成一個象；不保存、不建立草稿、不取亂數，手勢判定與正式點沙相同。首頁、新增占問（選點沙時）、教學目錄都有入口。
+  - **後來怎樣了**：記錄新增選填 `outcome`（和解讀相符／部分相符／和解讀不同／還看不出來＋文字），可修改、刪除；匯出匯入逐欄驗證；日誌新增統計與「後來怎樣了」篩選，首頁提示超過一週未回顧的記錄。
+
 ## 測試網址
 
 **https://magicsmallbear.github.io/geomancy-sandboard/**（GitHub Pages，原始碼 [MAGICSMALLBEAR/geomancy-sandboard](https://github.com/MAGICSMALLBEAR/geomancy-sandboard)，見 DECISIONS D20）。
@@ -59,9 +66,9 @@
 | `npm run typecheck` | 通過，0 錯誤 |
 | `npm run lint` | 通過，0 錯誤 0 警告 |
 | `npm run test:core` | 10 通過／0 失敗；輸出在 [core-test-report.tap](docs/core-test-report.tap) |
-| `npm run test:unit` | 9 個檔案、89 項通過（2026-10-05；內容版本 v2、四次長按、內容版本凍結 R05、十六象反轉／倒轉／對轉、65,536 盤確認裁判恰為八個偶數點象；手勢判定、點沙 reducer、自動點沙來源、Repository 在 fake-indexeddb 與記憶體兩種實作、匯入匯出邊界、成事關係各種情況、65,536 盤點之道性質、試用計時、圖片內容） |
-| `npm run build` | 成功；入口 JS gzip 151.71 KiB（目標 ≤250），precache 14 項 |
-| `npm run test:e2e` | 47 通過、1 略過（2026-10-05，含新增 `tests/e2e/content.spec.ts`；2026-10-04 新增 `tests/e2e/press.spec.ts` 3 項；四次長按另在 Firefox、WebKit 各跑 3 項皆通過；2026-10-03 含新增 `tests/e2e/learn.spec.ts` 3 項；縮放測試加入兩個新頁）（P05b 只在 WebKit 跑），Playwright Chromium 153.0.8010.12，對 production build（`vite preview`）執行 |
+| `npm run test:unit` | 10 個檔案、102 項通過（2026-10-05 0.8.0：新增 `tests/unit/followup.test.ts` 13 項，含 65,536 盤的相位與象的重現性質檢查、回顧的保存／衝突／刪除／匯出匯入；先前 89 項：內容版本 v2、四次長按、內容版本凍結 R05、十六象反轉／倒轉／對轉、65,536 盤確認裁判恰為八個偶數點象；手勢判定、點沙 reducer、自動點沙來源、Repository 在 fake-indexeddb 與記憶體兩種實作、匯入匯出邊界、成事關係各種情況、65,536 盤點之道性質、試用計時、圖片內容） |
+| `npm run build` | 成功；入口 JS gzip 161.83 KiB（目標 ≤250），CSS gzip 8.50 KiB，precache 14 項 |
+| `npm run test:e2e` | 50 通過、1 略過（2026-10-05 0.8.0，新增 `tests/e2e/followup.spec.ts` 3 項：試畫區、相位與圓盤與回顧、首頁主題切換；`zoom.spec.ts` 加入試畫區。followup、themes、advanced、zoom 四個檔案另在 Chromium、Firefox、WebKit 一起跑，共 42 項通過。注意：本機若已有舊的 `vite preview` 佔用 4173，Playwright 會沿用它而測到舊版；本輪改用另一個 port 對新 build 執行。先前紀錄：47 通過、1 略過，含新增 `tests/e2e/content.spec.ts`；2026-10-04 新增 `tests/e2e/press.spec.ts` 3 項；四次長按另在 Firefox、WebKit 各跑 3 項皆通過；2026-10-03 含新增 `tests/e2e/learn.spec.ts` 3 項；縮放測試加入兩個新頁）（P05b 只在 WebKit 跑），Playwright Chromium 153.0.8010.12，對 production build（`vite preview`）執行 |
 | `PW_EDGE=1 npx playwright test --project=msedge` | 40 通過、1 略過，本機安裝的 Microsoft Edge 154.0.4258.48 |
 | `PW_ENGINES=1 npx playwright test` | 120 通過、3 略過：Chromium、Firefox 155.0、WebKit 26.6（Playwright 的 Windows 版，不等於 macOS／iOS Safari）。需先 `npx playwright install firefox webkit` |
 
@@ -94,6 +101,11 @@
 - [ ] M6：5–8 位使用者試用、地占專家逐條審校中文解讀。
 
 ## 已知限制與問題
+
+- 0.8.0 新增的相位、象的重現、回顧用語與試畫區說明，都是未經專家審校的草稿；相位規則依常見西方實務整理（G08 書目），未能直接核對原書頁碼。
+- 主題設定是非同步寫入本機資料庫：切換後在極短時間內（毫秒級）重新整理，可能保留前一個主題。改版初期因全頁固定背景重繪較慢，自動測試曾 1/5 重現；已移除固定背景，重跑 32 次皆通過，但機制本身仍在。
+- 0.7.x 以前的 App 匯入含「後來怎樣了」的備份時，會略過這個欄位（記錄仍可匯入）。
+- 新視覺只在桌面 Chromium、Firefox、WebKit 與模擬手機寬度檢查過，真機與實際閱讀感受仍待試用。
 
 - 進階解讀的文字（成事、點之道、證人與裁判、十二宮逐宮）是本產品原創草稿，十二宮逐宮是「象在宮中的傾向 × 宮位問題」的組合式文字，全部未經地占專家審校。成事規則依 G06、點之道依 G07；Greer 原書未能直接核對。宮位環狀相鄰、摘要排序是本產品的明確選擇（D24）。
 - 學習區新增的文字（十二宮常見範圍、位置說明、術語）同樣是未審校草稿；反轉／倒轉／對轉只是圖式對應，頁面已註明不代表意義相反。

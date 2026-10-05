@@ -12,6 +12,7 @@ import { Dialog } from '../../components/Dialog.tsx';
 import { ResultView } from '../../components/ResultView.tsx';
 import { METHOD_LABEL } from '../../content/labels.ts';
 import { ShareImageDialog } from './ShareImageDialog.tsx';
+import { OutcomeEditor } from './OutcomeEditor.tsx';
 import { clearPending, completeCast, getPending, hasPending } from '../casting/pending.ts';
 
 type Load =
@@ -260,7 +261,11 @@ export function ResultPage() {
         onEvidenceOpened={() => logEvent('evidence_opened')}
         banner={banner}
         notes={saved
-          ? <><NotesEditor key={record.id} record={record} onSaved={next => setLoad({ status: 'ok', record: next, saved: true })} /><FeedbackForm /></>
+          ? <>
+              <NotesEditor key={record.id} record={record} onSaved={next => setLoad({ status: 'ok', record: next, saved: true })} />
+              <OutcomeEditor key={`outcome-${record.id}`} record={record} onSaved={next => setLoad({ status: 'ok', record: next, saved: true })} />
+              <FeedbackForm />
+            </>
           : <p className="card">保存成功後才能寫筆記。</p>}
       />
       <nav className="result-actions" aria-label="這筆記錄的操作">

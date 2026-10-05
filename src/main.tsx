@@ -6,6 +6,7 @@ import { initPwa } from './app/pwa.ts';
 import { openRepository } from './infrastructure/db.ts';
 import { DEFAULT_SETTINGS, MemoryRepository, type Repository, type Settings } from './infrastructure/repository.ts';
 import './styles/app.css';
+import './styles/visual.css';
 
 type Boot =
   | { status: 'opening' }

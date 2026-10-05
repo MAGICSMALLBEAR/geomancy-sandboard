@@ -2,6 +2,7 @@
 import { HOUSE_NODES, toDots, type Figure, type NodeId, type CastSource } from '../domain/geomancy.ts';
 import { FIGURES } from '../domain/catalog.ts';
 import type { Question } from '../domain/reading.ts';
+import type { OutcomeStatus } from '../domain/contracts.ts';
 
 export const NODE_LABEL: Record<NodeId, string> = {
   M1: '第一母象', M2: '第二母象', M3: '第三母象', M4: '第四母象',
@@ -25,6 +26,11 @@ export const figureById = (id: string) => FIGURES.find(f => f.id === id);
 export const figureAria = (figure: Figure): string => {
   const f = figureOf(figure);
   return `${f.zh} ${f.latin}，由上到下：${figure.map(dotWord).join('、')}`;
+};
+
+/** Follow-up wording compares what happened with the reading; it never claims the reading predicted anything. */
+export const OUTCOME_LABEL: Record<OutcomeStatus, string> = {
+  matched: '和解讀相符', partly: '部分相符', 'not-matched': '和解讀不同', unclear: '還看不出來',
 };
 
 export const TOPIC_LABEL: Record<Question['topic'], string> = { general: '一般反思', work: '工作', relationship: '關係' };

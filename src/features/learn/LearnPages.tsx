@@ -13,6 +13,7 @@ import { FigureGlyph } from '../../components/FigureGlyph.tsx';
 import { ResultView } from '../../components/ResultView.tsx';
 
 const LEARN_LINKS = [
+  { to: '/learn/try', title: '試畫區', text: '起卦前先練習點沙：看一列點痕如何兩兩消去，變成一點或兩點。不保存、不起卦。' },
   { to: '/learn/practice', title: '推盤練習', text: '自己設定四母象，一步一步看女象、姪象、證人與裁判怎麼算出來；也可以先自己算再對答案。' },
   { to: '/learn/houses', title: '十二宮與盤位', text: '十六個位置各從哪裡來、哪些入宮，以及證人、裁判、調和者與進階術語。' },
   { to: '/learn/example', title: '固定教學例題', text: '用一組固定的點數走完整個結果頁，可以播放成盤動畫。' },
@@ -21,7 +22,8 @@ const LEARN_LINKS = [
 export function LearnPage() {
   return (
     <div className="learn">
-      <h1>十六象與教學</h1>
+      <h1 className="page-title">十六象與教學</h1>
+      <p className="page-lede">從點沙到解讀，一步步認識西方地占。</p>
 
       <ul className="learn-links">
         {LEARN_LINKS.map(link => (
@@ -67,7 +69,7 @@ export function LearnPage() {
         <h2>規則與來源</h2>
         <p>規則版本 {RULE_VERSION}：常見的盾盤構造，前十二個位置依序入宮。其他傳統有不同的入宮方式，本版沒有採用。</p>
         <p>內容版本 {CONTENT_VERSION}：基礎象徵解讀（編輯草稿），保存在記錄裡。
-          結果頁另有「進階解讀」（{ADVANCED_VERSION}）：成事關係、點之道、證人與裁判、十二宮逐宮，由盤面即時計算、不存入記錄，同樣是未審校的草稿。本版沒有相位等其他技法。</p>
+          結果頁另有「進階解讀」（{ADVANCED_VERSION}）：成事關係、相位、象的重現、點之道、證人與裁判、十二宮逐宮，由盤面即時計算、不存入記錄，同樣是未審校的草稿。</p>
         <ul className="source-list">
           {SOURCES.map(source => (
             <li key={source.id}>

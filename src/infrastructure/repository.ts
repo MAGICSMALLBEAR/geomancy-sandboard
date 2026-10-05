@@ -1,9 +1,9 @@
 /** Storage boundary. UI state must only advance after these promises resolve. */
 import type { CastSource } from '../domain/geomancy.ts';
 import type { Question } from '../domain/reading.ts';
-import type { Draft, ReadingRecord } from '../domain/contracts.ts';
+import type { Draft, Outcome, ReadingRecord } from '../domain/contracts.ts';
 import { AppError } from './errors.ts';
-import { newDraft, newId, recordFromDraft, withConfirmedPress, withConfirmedRow, withNotes, withPreparedSource, type CastMethod } from './records.ts';
+import { newDraft, newId, recordFromDraft, withConfirmedPress, withConfirmedRow, withNotes, withOutcome, withPreparedSource, type CastMethod } from './records.ts';
 
 export type MotionSetting = 'system' | 'reduce' | 'full';
 /** Visual themes (DECISIONS D23). Display only: never part of a record or an export. */
@@ -49,6 +49,8 @@ export interface Repository {
   getReading(id: string): Promise<ReadingRecord | null>;
   listReadings(): Promise<ReadingRecord[]>;
   saveNotes(id: string, expectedRevision: number, notes: string): Promise<ReadingRecord>;
+  /** null removes the follow-up. */
+  saveOutcome(id: string, expectedRevision: number, outcome: Omit<Outcome, 'recordedAt'> | null): Promise<ReadingRecord>;
   deleteReading(id: string): Promise<void>;
   /** All-or-nothing; never overwrites an existing ID. */
   importBatch(records: ReadingRecord[], archives: ArchiveEntry[]): Promise<void>;
@@ -121,6 +123,13 @@ export class MemoryRepository implements Repository {
     const current = this.readings.get(id);
     if (!current) throw new AppError('NOT_FOUND');
     const next = withNotes(current, expectedRevision, notes, this.clock());
+    this.readings.set(id, next);
+    return structuredClone(next);
+  }
+  async saveOutcome(id: string, expectedRevision: number, outcome: Omit<Outcome, 'recordedAt'> | null) {
+    const current = this.readings.get(id);
+    if (!current) throw new AppError('NOT_FOUND');
+    const next = withOutcome(current, expectedRevision, outcome, this.clock());
     this.readings.set(id, next);
     return structuredClone(next);
   }

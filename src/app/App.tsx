@@ -11,6 +11,8 @@ import { ExamplePage, FigurePage, LearnPage } from '../features/learn/LearnPages
 import { HousesPage } from '../features/learn/HousesPage.tsx';
 import { PracticePage } from '../features/learn/PracticePage.tsx';
 import { SettingsPage } from '../features/settings/SettingsPage.tsx';
+import { TryPage } from '../features/learn/TryPage.tsx';
+import { BrandMark, NavIcon } from '../components/Decor.tsx';
 
 class ErrorBoundary extends Component<{ children: ReactNode; resetKey: string }, { failed: boolean }> {
   state = { failed: false };
@@ -47,12 +49,12 @@ function Layout() {
   return (
     <>
       <header className="site-header">
-        <Link to="/" className="brand">地占沙盤</Link>
+        <Link to="/" className="brand"><BrandMark />地占沙盤</Link>
         <nav aria-label="主要導覽">
-          <NavLink to="/new">新增占問</NavLink>
-          <NavLink to="/journal">日誌</NavLink>
-          <NavLink to="/learn">教學</NavLink>
-          <NavLink to="/settings">設定</NavLink>
+          <NavLink to="/new"><NavIcon name="new" />新增占問</NavLink>
+          <NavLink to="/journal"><NavIcon name="journal" />日誌</NavLink>
+          <NavLink to="/learn"><NavIcon name="learn" />教學</NavLink>
+          <NavLink to="/settings"><NavIcon name="settings" />設定</NavLink>
         </nav>
       </header>
       {repo.mode === 'memory' && (
@@ -97,6 +99,7 @@ const router = createHashRouter([
       { path: '/learn/example', element: <ExamplePage /> },
       { path: '/learn/houses', element: <HousesPage /> },
       { path: '/learn/practice', element: <PracticePage /> },
+      { path: '/learn/try', element: <TryPage /> },
       { path: '/learn/:figureId', element: <FigurePage /> },
       { path: '/settings', element: <SettingsPage /> },
       { path: '*', element: <NotFound /> },

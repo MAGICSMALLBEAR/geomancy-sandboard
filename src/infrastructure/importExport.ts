@@ -6,8 +6,8 @@ import { constructChart, sourceToMothers, toDots, NODES, RULE_VERSION,
   type CastSource, type Chart, type Figure, type Mothers, type NodeId } from '../domain/geomancy.ts';
 import { FIGURES } from '../domain/catalog.ts';
 import { assertQuestion, buildReading, isKnownContentVersion, type Claim, type ContentVersion, type Evidence, type Question, type Reading } from '../domain/reading.ts';
-import type { ExportEnvelope, ReadingRecord } from '../domain/contracts.ts';
-import { NOTES_MAX, newId } from './records.ts';
+import { OUTCOME_STATUSES, type ExportEnvelope, type OutcomeStatus, type ReadingRecord } from '../domain/contracts.ts';
+import { NOTES_MAX, OUTCOME_TEXT_MAX, newId } from './records.ts';
 import type { AppErrorCode } from './errors.ts';
 import type { ArchiveEntry } from './repository.ts';
 
@@ -167,6 +167,15 @@ function readKnownRecord(o: Obj, version: ContentVersion): ReadingRecord {
     ruleVersion: RULE_VERSION, contentVersion: version,
     question, source, mothers, chart, reading, notes: notes as string, integrity: 'verified',
   };
+  const outcome = own(o, 'outcome');
+  if (outcome !== undefined) {
+    if (!isObj(outcome)) bad('outcome 格式不正確');
+    const status = own(outcome as Obj, 'status'), text = own(outcome as Obj, 'text'), recordedAt = own(outcome as Obj, 'recordedAt');
+    if (!OUTCOME_STATUSES.includes(status as OutcomeStatus) || typeof text !== 'string' || text.length > OUTCOME_TEXT_MAX || !isoDate(recordedAt)) {
+      bad('事後回顧（outcome）格式不正確');
+    }
+    record.outcome = { status: status as OutcomeStatus, text: text as string, recordedAt: recordedAt as string };
+  }
   const origin = own(o, 'importOrigin');
   if (origin !== undefined) {
     if (!isObj(origin)) bad('importOrigin 格式不正確');
@@ -201,7 +210,9 @@ export function canonicalRecord(r: ReadingRecord): ReadingRecord {
     source: canonicalSource(r.source),
     mothers: r.mothers.map(canonicalFigure) as unknown as Mothers,
     chart: Object.fromEntries(NODES.map(n => [n, canonicalFigure(r.chart[n])])) as unknown as Chart,
-    reading: canonicalReading(r.reading), notes: r.notes, integrity: 'verified',
+    reading: canonicalReading(r.reading), notes: r.notes,
+    ...(r.outcome ? { outcome: { status: r.outcome.status, text: r.outcome.text, recordedAt: r.outcome.recordedAt } } : {}),
+    integrity: 'verified',
     ...(r.importOrigin ? { importOrigin: { originalId: r.importOrigin.originalId, importedAt: r.importOrigin.importedAt } } : {}),
   };
 }

@@ -1,7 +1,7 @@
 /** Whitelisted error codes. Only the code (never question text or notes) may be logged or exported. */
 export type AppErrorCode =
   | 'INVALID_COUNTS' | 'INVALID_FIGURE' | 'INVALID_MOTHERS' | 'INVALID_SOURCE' | 'INVALID_QUESTION'
-  | 'INVALID_NOTES' | 'INVALID_STATE'
+  | 'INVALID_NOTES' | 'INVALID_OUTCOME' | 'INVALID_STATE'
   | 'RNG_UNAVAILABLE'
   | 'STORAGE_UNAVAILABLE' | 'QUOTA'
   | 'REVISION_CONFLICT' | 'NOT_FOUND' | 'DRAFT_EXISTS'
@@ -37,6 +37,7 @@ export const ERROR_TEXT: Record<AppErrorCode, string> = {
   INVALID_SOURCE: '起卦來源格式不正確。',
   INVALID_QUESTION: '問題或主題宮位不完整，請回到新增占問檢查。',
   INVALID_NOTES: '筆記超過 5000 字的上限。',
+  INVALID_OUTCOME: '事後回顧需要選擇一個結果，文字不能超過 2000 字。',
   INVALID_STATE: '這個步驟目前無法執行，請重新載入頁面。',
   RNG_UNAVAILABLE: '目前無法使用裝置亂數。請改用十六列點沙或手動輸入。',
   STORAGE_UNAVAILABLE: '尚未保存。請重試，或先匯出備份。',

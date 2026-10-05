@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router';
-import type { ReadingRecord } from '../../domain/contracts.ts';
+import { Link, useSearchParams } from 'react-router';
+import { OUTCOME_STATUSES, type OutcomeStatus, type ReadingRecord } from '../../domain/contracts.ts';
 import type { Question } from '../../domain/reading.ts';
 import { useApp } from '../../app/AppContext.tsx';
 import { ERROR_TEXT, toAppError, type AppErrorCode } from '../../infrastructure/errors.ts';
 import { buildExportFiles, downloadText } from '../../infrastructure/importExport.ts';
-import { METHOD_LABEL, TOPIC_LABEL, figureOf, formatDate } from '../../content/labels.ts';
+import { METHOD_LABEL, OUTCOME_LABEL, TOPIC_LABEL, figureOf, formatDate } from '../../content/labels.ts';
 import { Dialog } from '../../components/Dialog.tsx';
 import { FigureGlyph } from '../../components/FigureGlyph.tsx';
 
@@ -15,6 +15,8 @@ export function JournalPage() {
   const [error, setError] = useState<AppErrorCode | null>(null);
   const [topic, setTopic] = useState<Question['topic'] | 'all'>('all');
   const [search, setSearch] = useState('');
+  const [params] = useSearchParams();
+  const [review, setReview] = useState<OutcomeStatus | 'all' | 'pending'>(() => params.get('review') === 'pending' ? 'pending' : 'all');
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [deleting, setDeleting] = useState<ReadingRecord | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -28,8 +30,13 @@ export function JournalPage() {
   const visible = useMemo(() => {
     const needle = search.trim().toLowerCase();
     return (records ?? []).filter(r =>
-      (topic === 'all' || r.question.topic === topic) && (needle === '' || r.question.text.toLowerCase().includes(needle)));
-  }, [records, topic, search]);
+      (topic === 'all' || r.question.topic === topic) && (needle === '' || r.question.text.toLowerCase().includes(needle)) &&
+      (review === 'all' || (review === 'pending' ? !r.outcome : r.outcome?.status === review)));
+  }, [records, topic, search, review]);
+  const stats = useMemo(() => {
+    const list = records ?? [];
+    return { total: list.length, reviewed: list.filter(r => r.outcome).length, notes: list.filter(r => r.notes).length };
+  }, [records]);
   const chosen = visible.filter(r => selected.has(r.id));
 
   const toggle = (id: string) => setSelected(current => {
@@ -55,8 +62,16 @@ export function JournalPage() {
 
   return (
     <div className="journal">
-      <h1>日誌</h1>
-      <p className="muted">記錄只保存在這個瀏覽器。清除網站資料會讓它們消失，請定期匯出備份。</p>
+      <h1 className="page-title">日誌</h1>
+      <p className="page-lede">記錄只保存在這個瀏覽器。清除網站資料會讓它們消失，請定期匯出備份。</p>
+      {stats.total > 0 && (
+        <ul className="journal-stats" aria-label="日誌統計">
+          <li className="card"><strong>{stats.total}</strong><span>筆占問</span></li>
+          <li className="card"><strong>{stats.reviewed}</strong><span>已寫回顧</span></li>
+          <li className="card"><strong>{stats.total - stats.reviewed}</strong><span>待回顧</span></li>
+          <li className="card"><strong>{stats.notes}</strong><span>有筆記</span></li>
+        </ul>
+      )}
       {error && <p className="notice is-error" role="alert">{ERROR_TEXT[error]}</p>}
 
       <div className="filters">
@@ -64,6 +79,13 @@ export function JournalPage() {
           <select value={topic} onChange={event => setTopic(event.target.value as typeof topic)}>
             <option value="all">全部</option>
             {(Object.keys(TOPIC_LABEL) as Question['topic'][]).map(t => <option key={t} value={t}>{TOPIC_LABEL[t]}</option>)}
+          </select>
+        </label>
+        <label>後來怎樣了
+          <select value={review} onChange={event => setReview(event.target.value as typeof review)}>
+            <option value="all">全部</option>
+            <option value="pending">尚未寫回顧</option>
+            {OUTCOME_STATUSES.map(o => <option key={o} value={o}>{OUTCOME_LABEL[o]}</option>)}
           </select>
         </label>
         <label>搜尋問題文字
@@ -97,6 +119,7 @@ export function JournalPage() {
                   <Link to={`/result/${record.id}`} className="record-link">{record.question.text}</Link>
                   <p className="muted">{formatDate(record.createdAt)}・{TOPIC_LABEL[record.question.topic]}・{METHOD_LABEL[record.source.kind]}・裁判：{judge.zh}
                     {record.notes && '・有筆記'}{record.importOrigin && '・匯入的副本'}</p>
+                  <p><span className={`outcome-badge is-${record.outcome?.status ?? 'none'}`}>{record.outcome ? OUTCOME_LABEL[record.outcome.status] : '尚未寫回顧'}</span></p>
                 </div>
                 <button type="button" className="danger" onClick={() => setDeleting(record)}>刪除</button>
               </li>

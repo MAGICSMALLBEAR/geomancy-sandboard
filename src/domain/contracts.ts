@@ -16,8 +16,17 @@ export interface ReadingRecord {
   chart: Chart;
   reading: Reading;
   notes: string;
+  /** What happened afterwards, written by the user later (DECISIONS D30). Optional; older records have none. */
+  outcome?: Outcome;
   integrity: 'verified';
   importOrigin?: { originalId: string; importedAt: string };
+}
+export type OutcomeStatus = 'matched' | 'partly' | 'not-matched' | 'unclear';
+export const OUTCOME_STATUSES: readonly OutcomeStatus[] = ['matched', 'partly', 'not-matched', 'unclear'];
+export interface Outcome {
+  status: OutcomeStatus;
+  text: string;
+  recordedAt: string;
 }
 export interface Draft {
   schemaVersion: 1;
