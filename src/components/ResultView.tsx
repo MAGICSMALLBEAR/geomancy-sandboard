@@ -136,6 +136,12 @@ export function ResultView({ question, dateLabel, source, chart, reading, animat
         <p className="eyebrow">{TOPIC_LABEL[question.topic]}
           {question.targetHouse ? `・第 ${question.targetHouse} 宮：${HOUSES[question.targetHouse - 1]}` : ''}</p>
         <h1 className="question-text">{question.text}</h1>
+        {question.originalText && (
+          <details className="scope-note">
+            <summary>最初寫下的話</summary>
+            <p className="original-text">{question.originalText}</p>
+          </details>
+        )}
         <p className="muted">
           {question.timeframe && <>時間範圍：{question.timeframe}・</>}
           {dateLabel && <>{dateLabel}・</>}{METHOD_LABEL[source.kind]}

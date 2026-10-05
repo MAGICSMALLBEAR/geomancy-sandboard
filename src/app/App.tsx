@@ -12,6 +12,7 @@ import { HousesPage } from '../features/learn/HousesPage.tsx';
 import { PracticePage } from '../features/learn/PracticePage.tsx';
 import { SettingsPage } from '../features/settings/SettingsPage.tsx';
 import { TryPage } from '../features/learn/TryPage.tsx';
+import { CustomsPage } from '../features/learn/CustomsPage.tsx';
 import { BrandMark, NavIcon } from '../components/Decor.tsx';
 
 class ErrorBoundary extends Component<{ children: ReactNode; resetKey: string }, { failed: boolean }> {
@@ -100,6 +101,7 @@ const router = createHashRouter([
       { path: '/learn/houses', element: <HousesPage /> },
       { path: '/learn/practice', element: <PracticePage /> },
       { path: '/learn/try', element: <TryPage /> },
+      { path: '/learn/customs', element: <CustomsPage /> },
       { path: '/learn/:figureId', element: <FigurePage /> },
       { path: '/settings', element: <SettingsPage /> },
       { path: '*', element: <NotFound /> },

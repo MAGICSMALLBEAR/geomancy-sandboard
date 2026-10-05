@@ -183,7 +183,7 @@ export class IdbRepository implements Repository {
       const stored = Object.fromEntries((await tx.objectStore('settings').getAll()).map(r => [r.key, r.value]));
       const motion = stored.motion === 'reduce' || stored.motion === 'full' ? stored.motion : DEFAULT_SETTINGS.motion;
       const theme = THEMES.includes(stored.theme as ThemeSetting) ? stored.theme as ThemeSetting : DEFAULT_SETTINGS.theme;
-      return { motion, sound: stored.sound === true, pilotLogging: stored.pilotLogging === true, theme } satisfies Settings;
+      return { motion, sound: stored.sound === true, haptics: stored.haptics === true, pilotLogging: stored.pilotLogging === true, theme } satisfies Settings;
     });
   }
   setSetting<K extends keyof Settings>(key: K, value: Settings[K]) {

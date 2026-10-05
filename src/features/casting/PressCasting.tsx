@@ -5,6 +5,7 @@ import { drawPressByte } from '../../domain/random.ts';
 import type { Draft } from '../../domain/contracts.ts';
 import { useApp } from '../../app/AppContext.tsx';
 import { playTap } from '../../app/sound.ts';
+import { buzzConfirm } from '../../app/haptics.ts';
 import { ERROR_TEXT, toAppError, type AppErrorCode } from '../../infrastructure/errors.ts';
 import { ORDINAL, figureOf } from '../../content/labels.ts';
 import { Dialog } from '../../components/Dialog.tsx';
@@ -129,6 +130,7 @@ export function PressCasting({ draft, onReady, onGone }: Props) {
     }
     setUnsaved(true);
     if (settings.sound) playTap();
+    if (settings.haptics) buzzConfirm();
     void save();
   };
 

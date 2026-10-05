@@ -7,7 +7,15 @@ export type Question = {
   text: string; timeframe: string;
   topic: 'general' | 'work' | 'relationship';
   targetHouse: null | 5 | 6 | 7 | 10;
+  /** What the user first wrote before focusing the question (plan §10, DECISIONS D34). Optional, never read by the reading. */
+  originalText?: string;
 };
+export const ORIGINAL_TEXT_MAX = 1000;
+/** Copy with a fixed key order; an empty original is dropped rather than stored. */
+export const cleanQuestion = (q: Question): Question => ({
+  text: q.text, timeframe: q.timeframe, topic: q.topic, targetHouse: q.targetHouse,
+  ...(q.originalText ? { originalText: q.originalText } : {}),
+});
 export function assertQuestion(value: unknown): asserts value is Question {
   if (!value || typeof value !== 'object') throw new Error('INVALID_QUESTION');
   const q = value as Question;
@@ -15,7 +23,10 @@ export function assertQuestion(value: unknown): asserts value is Question {
     : q.topic === 'work' ? [6, 7, 10].includes(q.targetHouse as number)
     : q.topic === 'relationship' ? [5, 7].includes(q.targetHouse as number) : false;
   if (typeof q.text !== 'string' || q.text.trim().length < 1 || q.text.length > 500 ||
-      typeof q.timeframe !== 'string' || q.timeframe.length > 80 || !legalHouse) throw new Error('INVALID_QUESTION');
+      typeof q.timeframe !== 'string' || q.timeframe.length > 80 || !legalHouse ||
+      (q.originalText !== undefined && (typeof q.originalText !== 'string' || q.originalText.length > ORIGINAL_TEXT_MAX))) {
+    throw new Error('INVALID_QUESTION');
+  }
 }
 export type Evidence = { nodeId: NodeId; figureId: string; dots: string; house?: number };
 export type Claim = {

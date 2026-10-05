@@ -27,13 +27,22 @@ function Sources({ ids }: { ids: string[] }) {
 
 /** Advanced layer: recomputed from the chart on display, never stored (DECISIONS D24). */
 export function AdvancedReading({ advanced, onShowNode, pathShown, onTogglePath }: Props) {
-  const { perfection, aspects, recurrences, way, court, houses } = advanced;
+  const { perfection, aspects, recurrences, way, court, houses, halted } = advanced;
   const showHouse = (h: number) => onShowNode(HOUSE_NODES[h - 1]);
   return (
     <section className="advanced-reading" aria-labelledby="advanced-title">
       <h2 id="advanced-title">進階解讀<span className="tag">草稿</span></h2>
       <p className="muted">以下依傳統西方地占技法由盤面即時計算，文字是本產品的編輯草稿，尚未經地占專家審校；
         它不存進記錄，規則或文字更新後重開會看到新版本（{advanced.version}）。</p>
+
+      {halted && (
+        <article className="card halted-note">
+          <h3>傳統禁例：停止盤</h3>
+          <p>{halted.text}</p>
+          <p><a href="#/learn/customs">了解古典禁例與起卦習慣</a></p>
+          <Sources ids={['G10', 'E01']} />
+        </article>
+      )}
 
       <article className="card">
         <h3>成事關係</h3>

@@ -32,3 +32,18 @@ export const ROLE_NOTES: { title: string; nodes: readonly NodeId[]; text: string
   { title: '調和者', nodes: ['R'],
     text: '由裁判與第一母象合成，用來在裁判不夠明確時多看一層。部分傳統不使用，所以結果頁預設隱藏。' },
 ];
+
+/**
+ * Planetary rulers (source G09). Two figures per planet, the nodes for Caput/Cauda Draconis. Signs and elements are
+ * deliberately left out: traditions disagree and no checked source was available (DECISIONS D26, D33).
+ */
+export const PLANET: Record<string, { zh: string; latin: string }> = {
+  via: { zh: '月亮', latin: 'Moon' }, populus: { zh: '月亮', latin: 'Moon' },
+  albus: { zh: '水星', latin: 'Mercury' }, conjunctio: { zh: '水星', latin: 'Mercury' },
+  puella: { zh: '金星', latin: 'Venus' }, amissio: { zh: '金星', latin: 'Venus' },
+  'fortuna-major': { zh: '太陽', latin: 'Sun' }, 'fortuna-minor': { zh: '太陽', latin: 'Sun' },
+  puer: { zh: '火星', latin: 'Mars' }, rubeus: { zh: '火星', latin: 'Mars' },
+  acquisitio: { zh: '木星', latin: 'Jupiter' }, laetitia: { zh: '木星', latin: 'Jupiter' },
+  tristitia: { zh: '土星', latin: 'Saturn' }, carcer: { zh: '土星', latin: 'Saturn' },
+  'caput-draconis': { zh: '月交點（北交點）', latin: 'North Node' }, 'cauda-draconis': { zh: '月交點（南交點）', latin: 'South Node' },
+};

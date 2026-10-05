@@ -30,7 +30,7 @@ export function JournalPage() {
   const visible = useMemo(() => {
     const needle = search.trim().toLowerCase();
     return (records ?? []).filter(r =>
-      (topic === 'all' || r.question.topic === topic) && (needle === '' || r.question.text.toLowerCase().includes(needle)) &&
+      (topic === 'all' || r.question.topic === topic) && (needle === '' || r.question.text.toLowerCase().includes(needle) || (r.question.originalText ?? '').toLowerCase().includes(needle)) &&
       (review === 'all' || (review === 'pending' ? !r.outcome : r.outcome?.status === review)));
   }, [records, topic, search, review]);
   const stats = useMemo(() => {

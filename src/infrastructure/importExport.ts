@@ -5,7 +5,7 @@
 import { constructChart, sourceToMothers, toDots, NODES, RULE_VERSION,
   type CastSource, type Chart, type Figure, type Mothers, type NodeId } from '../domain/geomancy.ts';
 import { FIGURES } from '../domain/catalog.ts';
-import { assertQuestion, buildReading, isKnownContentVersion, type Claim, type ContentVersion, type Evidence, type Question, type Reading } from '../domain/reading.ts';
+import { assertQuestion, buildReading, cleanQuestion, isKnownContentVersion, type Claim, type ContentVersion, type Evidence, type Question, type Reading } from '../domain/reading.ts';
 import { OUTCOME_STATUSES, type ExportEnvelope, type OutcomeStatus, type ReadingRecord } from '../domain/contracts.ts';
 import { NOTES_MAX, OUTCOME_TEXT_MAX, newId } from './records.ts';
 import type { AppErrorCode } from './errors.ts';
@@ -59,9 +59,11 @@ function readFigure(v: unknown, where: string): Figure {
 function readQuestion(v: unknown): Question {
   if (!isObj(v)) bad('缺少問題資料');
   const o = v as Obj;
-  const question = { text: own(o, 'text'), timeframe: own(o, 'timeframe'), topic: own(o, 'topic'), targetHouse: own(o, 'targetHouse') };
-  try { assertQuestion(question); } catch { bad('問題、時間範圍或主題宮位不合規格'); }
-  return question as Question;
+  const original = own(o, 'originalText');
+  const question = { text: own(o, 'text'), timeframe: own(o, 'timeframe'), topic: own(o, 'topic'), targetHouse: own(o, 'targetHouse'),
+    ...(original === undefined ? {} : { originalText: original }) };
+  try { assertQuestion(question); } catch { bad('問題、原句、時間範圍或主題宮位不合規格'); }
+  return cleanQuestion(question as Question);
 }
 function readSource(v: unknown): CastSource {
   if (!isObj(v)) bad('缺少起卦來源');
@@ -206,7 +208,7 @@ export function canonicalRecord(r: ReadingRecord): ReadingRecord {
   return {
     schemaVersion: 1, id: r.id, revision: r.revision, createdAt: r.createdAt, updatedAt: r.updatedAt,
     ruleVersion: r.ruleVersion, contentVersion: r.contentVersion,
-    question: { text: r.question.text, timeframe: r.question.timeframe, topic: r.question.topic, targetHouse: r.question.targetHouse },
+    question: cleanQuestion(r.question),
     source: canonicalSource(r.source),
     mothers: r.mothers.map(canonicalFigure) as unknown as Mothers,
     chart: Object.fromEntries(NODES.map(n => [n, canonicalFigure(r.chart[n])])) as unknown as Chart,

@@ -7,6 +7,7 @@ import { Link } from 'react-router';
 import type { Bit, Figure } from '../../domain/geomancy.ts';
 import { useApp } from '../../app/AppContext.tsx';
 import { playTap } from '../../app/sound.ts';
+import { buzzConfirm, buzzTap } from '../../app/haptics.ts';
 import { ROW_MAX_DOTS } from '../../infrastructure/records.ts';
 import { ROW_ELEMENT, dotWord, figureOf } from '../../content/labels.ts';
 import { FigureGlyph } from '../../components/FigureGlyph.tsx';
@@ -39,6 +40,7 @@ export function TryPage() {
     setCount(counter.current);
     setHint('');
     if (settings.sound) playTap();
+    if (settings.haptics) buzzTap();
   };
   const relative = (event: ReactPointerEvent) => {
     const rect = tray.current!.getBoundingClientRect();
@@ -80,6 +82,7 @@ export function TryPage() {
     locked.current = true;
     const fixed = counter.current;
     setReveal(fixed);
+    if (settings.haptics) buzzConfirm();
     setAnnounce(`這一列 ${fixed} 點，${fixed % 2 === 1 ? '奇數' : '偶數'}，記為${dotWord(fixed % 2)}。`);
     canvas.current?.reduce(fixed % 2 === 1 ? 1 : 2);
     timer.current = window.setTimeout(() => {

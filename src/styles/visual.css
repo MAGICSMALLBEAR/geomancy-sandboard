@@ -234,3 +234,10 @@ button.primary:not(:disabled):active, .button.primary:active { transform: transl
 [data-theme="ritual"] .journey li::before { box-shadow: 0 0 0 4px var(--accent-soft), 0 0 16px rgba(214, 181, 110, 0.45); }
 .verdict-figure.link-button { text-decoration: none; padding: 4px 6px; border-radius: 10px; font-weight: 400; }
 .verdict-figure.link-button:hover { background: color-mix(in srgb, var(--card) 60%, transparent); }
+
+/* Question form: the free-writing box above the focused question. */
+.original-box summary { font-weight: 700; }
+.original-box textarea { margin-top: 4px; }
+.focus-tips { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 10px 0 0; }
+.focus-tips li { padding: 2px 10px; border-radius: 999px; border: 1px dashed var(--ornament); font-size: 0.9rem; color: var(--muted); }
+.original-text { white-space: pre-wrap; }

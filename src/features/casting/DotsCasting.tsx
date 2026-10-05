@@ -4,6 +4,7 @@ import type { Bit, Figure } from '../../domain/geomancy.ts';
 import type { Draft } from '../../domain/contracts.ts';
 import { useApp } from '../../app/AppContext.tsx';
 import { playTap } from '../../app/sound.ts';
+import { buzzConfirm, buzzTap } from '../../app/haptics.ts';
 import { ERROR_TEXT, toAppError } from '../../infrastructure/errors.ts';
 import { ROW_MAX_DOTS } from '../../infrastructure/records.ts';
 import { ORDINAL, ROW_ELEMENT, dotWord, figureOf } from '../../content/labels.ts';
@@ -77,6 +78,7 @@ export function DotsCasting({ draft, onReady, onGone }: Props) {
     dispatch({ type: 'tap' });
     setHint('');
     if (settings.sound) playTap();
+    if (settings.haptics) buzzTap();
   };
 
   const relative = (event: ReactPointerEvent) => {
@@ -132,6 +134,7 @@ export function DotsCasting({ draft, onReady, onGone }: Props) {
       setLastRow({ row: rows.current, count: fixed });
       setAnnounce(`第 ${rows.current} 列完成：${fixed % 2 === 1 ? '奇數' : '偶數'}，記為${dotWord(fixed % 2)}。進度 ${rows.current}／16。`);
       logEvent('row_confirmed', { method: 'dots', rowIndex: rows.current });
+      if (settings.haptics) buzzConfirm();
       dispatch({ type: 'confirm-ok', draft: next });
       if (next.state === 'ready-to-finalize') { onReady(next); return; }
       canvas.current?.reduce(fixed % 2 === 1 ? 1 : 2);

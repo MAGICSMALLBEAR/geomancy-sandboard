@@ -147,11 +147,12 @@ describe.each(makers)('%s repository', (_name, make) => {
 
   test('settings, archives, feedback and clearAll', async () => {
     const repo = await make();
-    expect(await repo.getSettings()).toEqual({ motion: 'system', sound: false, pilotLogging: false, theme: 'sand' });
+    expect(await repo.getSettings()).toEqual({ motion: 'system', sound: false, haptics: false, pilotLogging: false, theme: 'sand' });
     await repo.setSetting('motion', 'reduce');
     await repo.setSetting('pilotLogging', true);
     await repo.setSetting('theme', 'ritual');
-    expect(await repo.getSettings()).toEqual({ motion: 'reduce', sound: false, pilotLogging: true, theme: 'ritual' });
+    await repo.setSetting('haptics', true);
+    expect(await repo.getSettings()).toEqual({ motion: 'reduce', sound: false, haptics: true, pilotLogging: true, theme: 'ritual' });
     await repo.importBatch([], [{ archiveId: 'a1', importedAt: '2026-01-01T00:00:00.000Z', raw: '{}',
       preview: { questionText: 'q', createdAt: '', schemaVersion: '9', ruleVersion: 'r', contentVersion: 'c' } }]);
     expect(await repo.listArchives()).toHaveLength(1);

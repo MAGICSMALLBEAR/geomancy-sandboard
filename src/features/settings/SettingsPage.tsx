@@ -11,10 +11,11 @@ import { MAX_IMPORT_BYTES, asCopy, buildExportFiles, downloadText, parseImport, 
   type ImportPlanItem } from '../../infrastructure/importExport.ts';
 import type { ArchiveEntry, MotionSetting } from '../../infrastructure/repository.ts';
 import { ThemePicker } from '../../components/ThemePicker.tsx';
+import { hapticsSupported } from '../../app/haptics.ts';
 import { formatDate } from '../../content/labels.ts';
 import { Dialog } from '../../components/Dialog.tsx';
 
-const APP_VERSION = '0.8.0';
+const APP_VERSION = '0.9.0';
 const MOTION_LABEL: Record<MotionSetting, string> = { system: '跟隨系統設定', reduce: '減少動態效果', full: '完整動態效果' };
 type Message = { kind: 'ok' | 'error'; text: string } | null;
 
@@ -190,6 +191,11 @@ export function SettingsPage() {
           <input type="checkbox" checked={settings.sound} onChange={event => change('sound', event.target.checked)} />
           點沙時播放音效（預設關閉）
         </label>
+        <label className="check">
+          <input type="checkbox" checked={settings.haptics} onChange={event => change('haptics', event.target.checked)} />
+          點沙與完成一列時輕微震動（預設關閉）
+        </label>
+        {!hapticsSupported() && <p className="muted">這個瀏覽器不支援震動（例如 iPhone 的 Safari），開啟也不會有作用。</p>}
       </section>
 
       <section className="card">

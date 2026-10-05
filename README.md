@@ -1,8 +1,8 @@
 # 地占沙盤
 
-版本 0.8.0（測試版） · 2026-10-05 · 繁體中文 · React＋TypeScript＋Vite 的本機優先 PWA
+版本 0.9.0（測試版） · 2026-10-05 · 繁體中文 · React＋TypeScript＋Vite 的本機優先 PWA
 
-**第一版 App 已可在電腦瀏覽器試用：提問、五種起卦、起卦前的試畫區、盾盤與十二宮圓盤、附依據的基礎象徵解讀與進階解讀（成事、相位、象的重現、點之道等，草稿）、學習區、日誌與事後回顧、三種可自選的外觀主題、JSON 備份匯入、離線。** 自動測試全部通過；測試網址 https://magicsmallbear.github.io/geomancy-sandboard/ 已上線（GitHub Pages），iPhone／Android 真機、Safari 與讀屏尚未實測。實際狀態以 [STATUS.md](STATUS.md) 為準。
+**第一版 App 已可在電腦瀏覽器試用：提問（保留原句與整理後的問題）、五種起卦、起卦前的試畫區、盾盤與十二宮圓盤、附依據的基礎象徵解讀與進階解讀（成事、相位、象的重現、點之道等，草稿）、學習區、日誌與事後回顧、古典禁例與行星對應、三種可自選的外觀主題、可選的震動回饋、JSON 備份匯入、離線。** 自動測試全部通過；測試網址 https://magicsmallbear.github.io/geomancy-sandboard/ 已上線（GitHub Pages），iPhone／Android 真機、Safari 與讀屏尚未實測。實際狀態以 [STATUS.md](STATUS.md) 為準。
 
 ## 第一版做什麼
 

@@ -7,7 +7,7 @@ import { HOUSE_NODES, PARENTS, toDots, type Chart, type NodeId } from './geomanc
 import { figureInfo, HOUSES } from './catalog.ts';
 import type { Question } from './reading.ts';
 
-export const ADVANCED_VERSION = 'zh-TW-advanced-draft-v2' as const;
+export const ADVANCED_VERSION = 'zh-TW-advanced-draft-v3' as const;
 
 type Info = ReturnType<typeof figureInfo>;
 const name = (f: Info) => `${f.zh}／${f.latin}`;
@@ -305,6 +305,21 @@ export function findRecurrences(chart: Chart, quesited: number | null): Recurren
   return result.sort((a, b) => weight(b) - weight(a) || b.houses.length - a.houses.length || a.houses[0] - b.houses[0]);
 }
 
+// ── Halted chart (G10): Rubeus or Cauda Draconis as the first mother ───────────────────────────────────
+
+export type HaltedChart = { figure: Info; text: string } | null;
+/** Old European texts discard such a chart. Shown as history and a reflection, never as an instruction to recast. */
+export function haltedChart(chart: Chart): HaltedChart {
+  const figure = figureInfo(chart.M1);
+  if (figure.id !== 'rubeus' && figure.id !== 'cauda-draconis') return null;
+  const reading = figure.id === 'rubeus'
+    ? '現代的讀法常把它看成提問時的狀態：情緒翻騰、還沒想清楚，或沒有認真看待這次占問。'
+    : '現代的讀法常把它看成提問時的狀態：心裡其實已經有定論，只是想找確認，不太願意接受新的看法。';
+  return { figure, text:
+    `這一盤的第一母象（第 1 宮）是「${name(figure)}」。部分舊歐洲地占文本有一條禁例：第一母象是紅或龍尾時，這盤應該捨棄、不加判斷。${reading}`
+    + '本 App 不要求重起，也不代表結果不好；你可以先問問自己提問時的狀態，再決定照常閱讀、隔一段時間改寫問題，或就此打住。' };
+}
+
 export type AdvancedReading = {
   version: typeof ADVANCED_VERSION;
   reviewStatus: 'editorial-draft';
@@ -314,6 +329,7 @@ export type AdvancedReading = {
   way: WayOfPoints;
   court: string;
   houses: HouseReading[];
+  halted: HaltedChart;
 };
 
 export function buildAdvancedReading(chart: Chart, question: Question): AdvancedReading {
@@ -323,5 +339,6 @@ export function buildAdvancedReading(chart: Chart, question: Question): Advanced
     aspects: findAspects(chart, question.targetHouse),
     recurrences: findRecurrences(chart, question.targetHouse),
     way: wayOfPoints(chart), court: courtReading(chart), houses: houseReadings(chart, question.targetHouse),
+    halted: haltedChart(chart),
   };
 }

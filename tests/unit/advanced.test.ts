@@ -113,7 +113,7 @@ describe('houses and the whole advanced reading', () => {
     const b = buildAdvancedReading(teaching, { ...q, text: '完全不同的問題文字' });
     expect(a).toEqual(b);
     expect(a.reviewStatus).toBe('editorial-draft');
-    expect(a.version).toBe('zh-TW-advanced-draft-v2');
+    expect(a.version).toBe('zh-TW-advanced-draft-v3');
     expect(a.court).toContain('交會／Conjunctio');
   });
 });

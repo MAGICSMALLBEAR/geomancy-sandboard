@@ -210,7 +210,7 @@ deleteReading(id): Promise<void>
 1. 先驗 file.size≤10 MiB，再解析 JSON；拒絕非物件、錯誤 format 與過多記錄。解析深度上限 16；不以遞迴合併把未知鍵寫入原型。
 2. 只挑出白名單欄位建立新物件；不得用未驗證輸入 `Object.assign` 到既有實例。限制 ID 為 UUID 形式，來源 ID／版本文字各≤80，日期必須可解析成 UTC ISO。
    `revision` 必須是非負安全整數；importOrigin 若存在，也需驗 UUID 與日期。備份格式不能依 TypeScript 型別宣告就跳過這些 runtime 檢查。
-3. 已知 schema/rule/content 驗四母與所有 bits、count、bytes、question 組合；問題≤500、時間≤80、notes≤5000；outcome 若存在，status 只允許四種、text≤2000、recordedAt 為 UTC ISO 8601，不合則整筆拒絕。reading最多 16 個 claims；每段 text≤2000、title≤100，每組 evidence≤16、sourceIds≤16。圖式只允許四位 1/2；FigureId/NodeId/house 都驗範圍。
+3. 已知 schema/rule/content 驗四母與所有 bits、count、bytes、question 組合；問題≤500、時間≤80、原句 originalText（選填，D34）≤1000、notes≤5000；outcome 若存在，status 只允許四種、text≤2000、recordedAt 為 UTC ISO 8601，不合則整筆拒絕。reading最多 16 個 claims；每段 text≤2000、title≤100，每組 evidence≤16、sourceIds≤16。圖式只允許四位 1/2；FigureId/NodeId/house 都驗範圍。
 4. 從 source 重算 mothers、chart；任何不合都拒絕該筆，不能只檢查 J。對完全相同 contentVersion，重算 reading 並比對所有已知內容與證據。除 notes／timestamps 等明確可變欄位外，不容許手改判詞冒充本包版本。
 5. 版本不支援而結構可安全解析者，列為「只讀封存」。確認後存入 archives：保存原 JSON 與基本時間／問題預覽，所有預覽純文字；不視為 ReadingRecord、不執行規則、不納入一般日誌判讀。可下載原檔，未來支援後另行遷移。
 6. 顯示逐筆預覽與錯誤原因，使用者確認後只加入有效選取記錄。全批入庫用一筆交易，失敗全部 rollback，不出現一半成功卻整批顯示成功。

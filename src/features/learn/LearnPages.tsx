@@ -9,6 +9,7 @@ import { buildReading, type Question } from '../../domain/reading.ts';
 import teaching from '../../../fixtures/teaching.json';
 import { useApp } from '../../app/AppContext.tsx';
 import { SOURCES } from '../../content/sources.ts';
+import { PLANET } from '../../content/learn.ts';
 import { FigureGlyph } from '../../components/FigureGlyph.tsx';
 import { ResultView } from '../../components/ResultView.tsx';
 
@@ -16,6 +17,7 @@ const LEARN_LINKS = [
   { to: '/learn/try', title: '試畫區', text: '起卦前先練習點沙：看一列點痕如何兩兩消去，變成一點或兩點。不保存、不起卦。' },
   { to: '/learn/practice', title: '推盤練習', text: '自己設定四母象，一步一步看女象、姪象、證人與裁判怎麼算出來；也可以先自己算再對答案。' },
   { to: '/learn/houses', title: '十二宮與盤位', text: '十六個位置各從哪裡來、哪些入宮，以及證人、裁判、調和者與進階術語。' },
+  { to: '/learn/customs', title: '古典禁例與起卦習慣', text: '舊文本說哪些盤不該判斷、什麼狀態不該起卦，以及同一件事要不要重問。' },
   { to: '/learn/example', title: '固定教學例題', text: '用一組固定的點數走完整個結果頁，可以播放成盤動畫。' },
 ] as const;
 
@@ -124,6 +126,10 @@ export function FigurePage() {
       <p>{info.keywords.join('、')}</p>
       <h2>反思提示</h2>
       <p>{info.reflection}</p>
+      <h2>行星對應</h2>
+      <p>{PLANET[info.id].zh}<span className="latin">{PLANET[info.id].latin}</span></p>
+      <p className="muted">西方地占把十六象兩兩配給七個行星，龍首、龍尾配給月亮的南北交點。
+        星座與元素在各傳統之間差異很大，這裡不列。來源：G09。</p>
 
       <h2>圖式結構</h2>
       <ol className="element-rows" aria-label="四行，由上到下">

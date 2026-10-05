@@ -1,7 +1,7 @@
 /** Pure draft/record transitions shared by the IndexedDB and in-memory repositories. */
 import { constructChart, pressFigure, sourceToMothers, RULE_VERSION, type CastSource } from '../domain/geomancy.ts';
 import { CONTENT_VERSION } from '../domain/catalog.ts';
-import { assertQuestion, buildReading, type Question } from '../domain/reading.ts';
+import { assertQuestion, buildReading, cleanQuestion, type Question } from '../domain/reading.ts';
 import { OUTCOME_STATUSES, type Draft, type Outcome, type ReadingRecord } from '../domain/contracts.ts';
 import { AppError, toAppError } from './errors.ts';
 
@@ -25,7 +25,7 @@ export function newDraft(id: string, question: Question, method: CastMethod, now
   if (method !== 'dots' && method !== 'press' && method !== 'auto' && method !== 'quick' && method !== 'manual') throw new AppError('INVALID_STATE');
   return {
     schemaVersion: 1, id, revision: 0, createdAt: now, updatedAt: now,
-    question: { text: question.text, timeframe: question.timeframe, topic: question.topic, targetHouse: question.targetHouse },
+    question: cleanQuestion(question),
     ruleVersion: RULE_VERSION, contentVersion: CONTENT_VERSION,
     method, confirmedCounts: [], ...(method === 'press' ? { confirmedPresses: [] } : {}), preparedSource: null, state: 'casting',
   };

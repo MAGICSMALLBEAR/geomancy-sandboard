@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { HOUSES } from '../../domain/catalog.ts';
-import type { Question } from '../../domain/reading.ts';
+import { ORIGINAL_TEXT_MAX, type Question } from '../../domain/reading.ts';
 import type { Draft } from '../../domain/contracts.ts';
 import { useApp } from '../../app/AppContext.tsx';
 import { ERROR_TEXT, toAppError, type AppErrorCode } from '../../infrastructure/errors.ts';
@@ -32,10 +32,14 @@ function MethodIcon({ method }: { method: CastMethod }) {
   );
 }
 
+/** Counts full-width and ASCII question marks; a rough hint that several questions were written together. */
+const questionMarks = (value: string): number => (value.match(/[？?]/g) ?? []).length;
+
 export function NewQuestionPage() {
   const { repo, logEvent } = useApp();
   const navigate = useNavigate();
   const [existing, setExisting] = useState<Draft | null | undefined>(undefined);
+  const [original, setOriginal] = useState('');
   const [text, setText] = useState('');
   const [timeframe, setTimeframe] = useState('');
   const [topic, setTopic] = useState<Question['topic']>('general');
@@ -74,7 +78,8 @@ export function NewQuestionPage() {
     submitting.current = true;
     setError(null);
     try {
-      const draft = await repo.createDraft({ text: text.trim(), timeframe: timeframe.trim(), topic, targetHouse: topic === 'general' ? null : house }, method);
+      const draft = await repo.createDraft({ text: text.trim(), timeframe: timeframe.trim(), topic, targetHouse: topic === 'general' ? null : house,
+        originalText: original.trim() }, method);
       startPilotSession();
       logEvent('session_started');
       logEvent('method_chosen', { method });
@@ -121,6 +126,25 @@ export function NewQuestionPage() {
     <form className="new-question" onSubmit={event => void submit(event)} noValidate>
       <h1 className="page-title">新增占問</h1>
       <p className="page-lede">靜下心，把想問的事寫清楚。問題越具體，解讀越容易對照。</p>
+
+      <details className="card field original-box">
+        <summary>先把心裡的話寫下來（選填）</summary>
+        <p id="original-help" className="hint">想到什麼就寫什麼，不必整理。寫完再從裡面挑出一件事，整理成下方的問題。兩個版本都會保存，日後回顧時可以對照。</p>
+        <textarea id="original" aria-label="心裡的話（選填）" aria-describedby="original-help" rows={4} maxLength={ORIGINAL_TEXT_MAX}
+          value={original} onChange={event => setOriginal(event.target.value)} />
+        <p className="muted">還可以輸入 {ORIGINAL_TEXT_MAX - original.length} 字</p>
+        {questionMarks(original) >= 2 && (
+          <p className="notice" role="status">看起來不只一個問題。地占一次只問一件事，其他的可以之後另開一筆占問。</p>
+        )}
+        {original.trim() && !text.trim() && (
+          <button type="button" onClick={() => { setText(original.trim().slice(0, TEXT_MAX)); textRef.current?.focus(); }}>帶入下方再修改</button>
+        )}
+        <ul className="focus-tips">
+          <li>只問一件事</li>
+          <li>問自己能觀察或能行動的部分</li>
+          <li>加上時間範圍，例如「未來三個月」</li>
+        </ul>
+      </details>
 
       <div className="field">
         <label htmlFor="question">你想問什麼？</label>
