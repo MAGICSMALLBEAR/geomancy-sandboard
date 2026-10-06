@@ -5,24 +5,30 @@ import type { Question } from '../../domain/reading.ts';
 import { useApp } from '../../app/AppContext.tsx';
 import { ERROR_TEXT, toAppError, type AppErrorCode } from '../../infrastructure/errors.ts';
 import { buildExportFiles, downloadText } from '../../infrastructure/importExport.ts';
-import { METHOD_LABEL, OUTCOME_LABEL, TOPIC_LABEL, figureOf, formatDate } from '../../content/labels.ts';
+import { METHOD_LABEL, OUTCOME_LABEL, TOPIC_LABEL, figureOf, formatCalendarDate, formatDate } from '../../content/labels.ts';
+import { isReviewDue } from '../../infrastructure/records.ts';
 import { Dialog } from '../../components/Dialog.tsx';
 import { FigureGlyph } from '../../components/FigureGlyph.tsx';
 
 export function JournalPage() {
   const { repo } = useApp();
   const [records, setRecords] = useState<ReadingRecord[] | null>(null);
+  // One clock reading per load, so the badges and the "due" filter agree.
+  const [now, setNow] = useState(() => new Date());
   const [error, setError] = useState<AppErrorCode | null>(null);
   const [topic, setTopic] = useState<Question['topic'] | 'all'>('all');
   const [search, setSearch] = useState('');
   const [params] = useSearchParams();
-  const [review, setReview] = useState<OutcomeStatus | 'all' | 'pending'>(() => params.get('review') === 'pending' ? 'pending' : 'all');
+  const [review, setReview] = useState<OutcomeStatus | 'all' | 'pending' | 'due'>(() => {
+    const wanted = params.get('review');
+    return wanted === 'pending' || wanted === 'due' ? wanted : 'all';
+  });
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [deleting, setDeleting] = useState<ReadingRecord | null>(null);
   const [exporting, setExporting] = useState(false);
 
   const reload = useCallback(() => {
-    repo.listReadings().then(list => { setRecords(list); setError(null); }, reason => setError(toAppError(reason).code));
+    repo.listReadings().then(list => { setNow(new Date()); setRecords(list); setError(null); }, reason => setError(toAppError(reason).code));
   }, [repo]);
   useEffect(reload, [reload]);
 
@@ -31,8 +37,8 @@ export function JournalPage() {
     const needle = search.trim().toLowerCase();
     return (records ?? []).filter(r =>
       (topic === 'all' || r.question.topic === topic) && (needle === '' || r.question.text.toLowerCase().includes(needle) || (r.question.originalText ?? '').toLowerCase().includes(needle)) &&
-      (review === 'all' || (review === 'pending' ? !r.outcome : r.outcome?.status === review)));
-  }, [records, topic, search, review]);
+      (review === 'all' || (review === 'pending' ? !r.outcome : review === 'due' ? isReviewDue(r, now) : r.outcome?.status === review)));
+  }, [records, topic, search, review, now]);
   const stats = useMemo(() => {
     const list = records ?? [];
     return { total: list.length, reviewed: list.filter(r => r.outcome).length, notes: list.filter(r => r.notes).length };
@@ -85,6 +91,7 @@ export function JournalPage() {
           <select value={review} onChange={event => setReview(event.target.value as typeof review)}>
             <option value="all">全部</option>
             <option value="pending">尚未寫回顧</option>
+            <option value="due">到了回顧的時候</option>
             {OUTCOME_STATUSES.map(o => <option key={o} value={o}>{OUTCOME_LABEL[o]}</option>)}
           </select>
         </label>
@@ -119,7 +126,13 @@ export function JournalPage() {
                   <Link to={`/result/${record.id}`} className="record-link">{record.question.text}</Link>
                   <p className="muted">{formatDate(record.createdAt)}・{TOPIC_LABEL[record.question.topic]}・{METHOD_LABEL[record.source.kind]}・裁判：{judge.zh}
                     {record.notes && '・有筆記'}{record.importOrigin && '・匯入的副本'}</p>
-                  <p><span className={`outcome-badge is-${record.outcome?.status ?? 'none'}`}>{record.outcome ? OUTCOME_LABEL[record.outcome.status] : '尚未寫回顧'}</span></p>
+                  <p className="outcome-summary">
+                    {isReviewDue(record, now)
+                      ? <span className="outcome-badge is-due">該回顧了</span>
+                      : <span className={`outcome-badge is-${record.outcome?.status ?? 'none'}`}>{record.outcome ? OUTCOME_LABEL[record.outcome.status] : '尚未寫回顧'}</span>}
+                    {!record.outcome && record.plan?.reviewOn && <span className="muted">預計 {formatCalendarDate(record.plan.reviewOn)} 回顧</span>}
+                  </p>
+                  {record.plan?.action && <p className="muted">打算：{record.plan.action.length > 60 ? `${record.plan.action.slice(0, 60)}…` : record.plan.action}</p>}
                 </div>
                 <button type="button" className="danger" onClick={() => setDeleting(record)}>刪除</button>
               </li>

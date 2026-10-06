@@ -2,9 +2,9 @@
 import { openDB, type DBSchema, type IDBPDatabase, type IDBPTransaction, type StoreNames } from 'idb';
 import type { CastSource } from '../domain/geomancy.ts';
 import type { Question } from '../domain/reading.ts';
-import type { Draft, Outcome, ReadingRecord } from '../domain/contracts.ts';
+import type { ActionPlan, Draft, Outcome, ReadingRecord } from '../domain/contracts.ts';
 import { AppError, toAppError } from './errors.ts';
-import { newDraft, newId, recordFromDraft, withConfirmedPress, withConfirmedRow, withNotes, withOutcome, withPreparedSource, type CastMethod } from './records.ts';
+import { newDraft, newId, recordFromDraft, withConfirmedPress, withConfirmedRow, withNotes, withOutcome, withPlan, withPreparedSource, type CastMethod } from './records.ts';
 import { DEFAULT_SETTINGS, FEEDBACK_EVENT_LIMIT, THEMES, sortNewestFirst, systemClock, trimEvents,
   type ArchiveEntry, type ThemeSetting, type Clock, type FeedbackEntry, type Repository, type Settings } from './repository.ts';
 
@@ -157,6 +157,16 @@ export class IdbRepository implements Repository {
       const current = await store.get(id);
       if (!current) throw new AppError('NOT_FOUND');
       const next = withOutcome(current, expectedRevision, outcome, this.clock());
+      await store.put(next);
+      return next;
+    });
+  }
+  savePlan(id: string, expectedRevision: number, plan: Omit<ActionPlan, 'recordedAt'> | null) {
+    return this.run(['readings'], 'readwrite', async tx => {
+      const store = tx.objectStore('readings');
+      const current = await store.get(id);
+      if (!current) throw new AppError('NOT_FOUND');
+      const next = withPlan(current, expectedRevision, plan, this.clock());
       await store.put(next);
       return next;
     });

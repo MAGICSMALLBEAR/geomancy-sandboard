@@ -7,7 +7,7 @@ import { constructChart, sourceToMothers, toDots, NODES, RULE_VERSION,
 import { FIGURES } from '../domain/catalog.ts';
 import { assertQuestion, buildReading, cleanQuestion, isKnownContentVersion, type Claim, type ContentVersion, type Evidence, type Question, type Reading } from '../domain/reading.ts';
 import { OUTCOME_STATUSES, type ExportEnvelope, type OutcomeStatus, type ReadingRecord } from '../domain/contracts.ts';
-import { NOTES_MAX, OUTCOME_TEXT_MAX, newId } from './records.ts';
+import { NOTES_MAX, OUTCOME_TEXT_MAX, PLAN_ACTION_MAX, isCalendarDate, newId } from './records.ts';
 import type { AppErrorCode } from './errors.ts';
 import type { ArchiveEntry } from './repository.ts';
 
@@ -178,6 +178,16 @@ function readKnownRecord(o: Obj, version: ContentVersion): ReadingRecord {
     }
     record.outcome = { status: status as OutcomeStatus, text: text as string, recordedAt: recordedAt as string };
   }
+  const plan = own(o, 'plan');
+  if (plan !== undefined) {
+    if (!isObj(plan)) bad('plan 格式不正確');
+    const action = own(plan as Obj, 'action'), reviewOn = own(plan as Obj, 'reviewOn'), recordedAt = own(plan as Obj, 'recordedAt');
+    if (typeof action !== 'string' || action.length > PLAN_ACTION_MAX || (reviewOn !== undefined && !isCalendarDate(reviewOn))
+      || (action.trim() === '' && reviewOn === undefined) || !isoDate(recordedAt)) {
+      bad('預計行動與回顧日期（plan）格式不正確');
+    }
+    record.plan = { action: action as string, ...(reviewOn === undefined ? {} : { reviewOn: reviewOn as string }), recordedAt: recordedAt as string };
+  }
   const origin = own(o, 'importOrigin');
   if (origin !== undefined) {
     if (!isObj(origin)) bad('importOrigin 格式不正確');
@@ -214,6 +224,7 @@ export function canonicalRecord(r: ReadingRecord): ReadingRecord {
     chart: Object.fromEntries(NODES.map(n => [n, canonicalFigure(r.chart[n])])) as unknown as Chart,
     reading: canonicalReading(r.reading), notes: r.notes,
     ...(r.outcome ? { outcome: { status: r.outcome.status, text: r.outcome.text, recordedAt: r.outcome.recordedAt } } : {}),
+    ...(r.plan ? { plan: { action: r.plan.action, ...(r.plan.reviewOn === undefined ? {} : { reviewOn: r.plan.reviewOn }), recordedAt: r.plan.recordedAt } } : {}),
     integrity: 'verified',
     ...(r.importOrigin ? { importOrigin: { originalId: r.importOrigin.originalId, importedAt: r.importOrigin.importedAt } } : {}),
   };

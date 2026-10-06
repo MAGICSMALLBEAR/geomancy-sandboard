@@ -2,11 +2,12 @@
 import { constructChart, pressFigure, sourceToMothers, RULE_VERSION, type CastSource } from '../domain/geomancy.ts';
 import { CONTENT_VERSION } from '../domain/catalog.ts';
 import { assertQuestion, buildReading, cleanQuestion, type Question } from '../domain/reading.ts';
-import { OUTCOME_STATUSES, type Draft, type Outcome, type ReadingRecord } from '../domain/contracts.ts';
+import { OUTCOME_STATUSES, type ActionPlan, type Draft, type Outcome, type ReadingRecord } from '../domain/contracts.ts';
 import { AppError, toAppError } from './errors.ts';
 
 export const NOTES_MAX = 5000;
 export const OUTCOME_TEXT_MAX = 2000;
+export const PLAN_ACTION_MAX = 1000;
 export const ROW_MAX_DOTS = 4096;
 export type CastMethod = Draft['method'];
 
@@ -113,4 +114,44 @@ export function withOutcome(record: ReadingRecord, expectedRevision: number, out
     throw new AppError('INVALID_OUTCOME');
   }
   return { ...base, outcome: { status: outcome.status, text: outcome.text, recordedAt: now } };
+}
+
+/** A real calendar date written as `YYYY-MM-DD` (no time, no zone). */
+export function isCalendarDate(value: unknown): value is string {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [y, m, d] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  return date.getUTCFullYear() === y && date.getUTCMonth() === m - 1 && date.getUTCDate() === d;
+}
+
+/** Add, replace or (with null) remove the planned next step. Same revision guard as notes. */
+export function withPlan(record: ReadingRecord, expectedRevision: number, plan: Omit<ActionPlan, 'recordedAt'> | null, now: string): ReadingRecord {
+  if (record.revision !== expectedRevision) throw new AppError('REVISION_CONFLICT');
+  const base = { ...record, revision: record.revision + 1, updatedAt: now };
+  if (plan === null) {
+    delete base.plan;
+    return base;
+  }
+  if (typeof plan.action !== 'string' || plan.action.length > PLAN_ACTION_MAX
+    || (plan.reviewOn !== undefined && !isCalendarDate(plan.reviewOn))
+    || (plan.action.trim() === '' && plan.reviewOn === undefined)) {
+    throw new AppError('INVALID_PLAN');
+  }
+  return { ...base, plan: { action: plan.action, ...(plan.reviewOn === undefined ? {} : { reviewOn: plan.reviewOn }), recordedAt: now } };
+}
+
+/** Records with no follow-up and no review date are suggested for review after this long. */
+export const REVIEW_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** The device's local calendar date, `YYYY-MM-DD`, optionally shifted by whole days. */
+export function localDate(now: Date, addDays = 0): string {
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + addDays);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** Due for "what happened afterwards": the chosen review date has come, or (without one) a week has passed. */
+export function isReviewDue(record: ReadingRecord, now: Date): boolean {
+  if (record.outcome) return false;
+  if (record.plan?.reviewOn) return localDate(now) >= record.plan.reviewOn;
+  return now.getTime() - Date.parse(record.createdAt) > REVIEW_AFTER_MS;
 }

@@ -9,6 +9,7 @@ import { METHOD_LABEL, OUTCOME_LABEL, TOPIC_LABEL, figureOf, formatDate } from '
 import { FigureGlyph } from '../../components/FigureGlyph.tsx';
 import { HeroShield } from '../../components/Decor.tsx';
 import { ThemePicker } from '../../components/ThemePicker.tsx';
+import { isReviewDue } from '../../infrastructure/records.ts';
 
 const JOURNEY = [
   { title: '寫下問題', text: '聚焦一件事，選擇想看的生活領域。' },
@@ -16,8 +17,6 @@ const JOURNEY = [
   { title: '盾盤成形', text: '女象、姪象、證人到裁判，一層層推出整張盤。' },
   { title: '解讀與回顧', text: '每段解讀附盤位依據；日後再補寫事情的發展。' },
 ];
-/** Records older than this without a follow-up are suggested for review. */
-const REVIEW_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
 
 export function HomePage() {
   const { repo } = useApp();
@@ -32,8 +31,8 @@ export function HomePage() {
       if (!alive) return;
       setDraft(active);
       setRecent(readings.slice(0, 3));
-      const now = Date.now();
-      setToReview(readings.filter(r => !r.outcome && now - Date.parse(r.createdAt) > REVIEW_AFTER_MS).length);
+      const now = new Date();
+      setToReview(readings.filter(r => isReviewDue(r, now)).length);
     }, reason => { if (alive) setError(toAppError(reason).code); });
     return () => { alive = false; };
   }, [repo]);
@@ -92,8 +91,8 @@ export function HomePage() {
               </ul>
             )}
           {toReview > 0 && (
-            <p className="notice">有 {toReview} 筆超過一週的占問還沒寫「後來怎樣了」。回頭對照，是理解象義最好的練習。
-              <br /><Link to="/journal?review=pending">去補寫回顧</Link></p>
+            <p className="notice">有 {toReview} 筆占問到了回顧的時候（已到預定的回顧日，或沒設日期且超過一週），還沒寫「後來怎樣了」。回頭對照，是理解象義最好的練習。
+              <br /><Link to="/journal?review=due">去補寫回顧</Link></p>
           )}
           <p><Link to="/journal">查看全部日誌</Link>　<Link to="/learn">十六象與教學</Link></p>
         </section>

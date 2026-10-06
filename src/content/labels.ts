@@ -67,3 +67,11 @@ export function formatDate(iso: string): string {
   if (Number.isNaN(date.getTime())) return '';
   return new Intl.DateTimeFormat('zh-TW', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
 }
+
+/** `YYYY-MM-DD` as a date without time, e.g. 2026年10月13日 星期二. */
+export function formatCalendarDate(day: string): string {
+  const [y, m, d] = day.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  if (Number.isNaN(date.getTime())) return day;
+  return new Intl.DateTimeFormat('zh-TW', { dateStyle: 'full' }).format(date);
+}

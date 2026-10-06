@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Chart } from '../../domain/geomancy.ts';
 import type { Question } from '../../domain/reading.ts';
 import { Dialog } from '../../components/Dialog.tsx';
@@ -39,11 +39,27 @@ export function ShareImageDialog({ open, onClose, chart, question, dateLabel, me
     return () => { alive = false; if (url) URL.revokeObjectURL(url); };
   }, [open, includeQuestion, chart, question, dateLabel, methodLabel]);
 
+  const [shareFailed, setShareFailed] = useState(false);
+  const fileName = `geomancy-${createdAt.slice(0, 10)}.png`;
+  const file = useMemo(() => image ? new File([image.blob], fileName, { type: 'image/png' }) : null, [image, fileName]);
+  // Only browsers that can share files (mostly phones) get the button; desktop keeps the download.
+  const canShare = file !== null && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] });
+  const share = async () => {
+    if (!file) return;
+    setShareFailed(false);
+    try {
+      await navigator.share({ files: [file] });
+    } catch (error) {
+      // Closing the share sheet is a choice, not a failure.
+      if (!(error instanceof DOMException && error.name === 'AbortError')) setShareFailed(true);
+    }
+  };
+
   const download = () => {
     if (!image) return;
     const link = document.createElement('a');
     link.href = image.url;
-    link.download = `geomancy-${createdAt.slice(0, 10)}.png`;
+    link.download = fileName;
     document.body.append(link);
     link.click();
     link.remove();
@@ -51,16 +67,18 @@ export function ShareImageDialog({ open, onClose, chart, question, dateLabel, me
 
   return (
     <Dialog open={open} title="存成圖片" onClose={onClose}>
-      <p>圖片在這台裝置上產生，不會上傳。內容包含盾盤、裁判與成事關係的結論。</p>
+      <p>圖片在這台裝置上產生，不會上傳。內容包含盾盤、裁判與成事關係的結論。{canShare && '按「分享」會打開裝置的分享選單，由你選擇要傳給誰。'}</p>
       <label className="check">
         <input type="checkbox" checked={includeQuestion} onChange={event => setIncludeQuestion(event.target.checked)} />
         在圖片中顯示問題文字（圖片容易被轉傳，預設不顯示）
       </label>
       {failed && <p className="notice is-error" role="alert">這個瀏覽器無法產生圖片。可以改用截圖，或匯出 JSON。</p>}
+      {shareFailed && <p className="notice is-error" role="alert">無法開啟分享選單。可以改按「下載 PNG」。</p>}
       {image && <img className="share-preview" src={image.url} width={SHARE_WIDTH} height={SHARE_HEIGHT}
         alt={`圖片預覽：盾盤、裁判與成事關係${includeQuestion ? '，含問題文字' : ''}`} />}
       <div className="dialog-actions">
-        <button type="button" className="primary" disabled={!image} onClick={download}>下載 PNG</button>
+        {canShare && <button type="button" className="primary" onClick={() => void share()}>分享…</button>}
+        <button type="button" className={canShare ? undefined : 'primary'} disabled={!image} onClick={download}>下載 PNG</button>
         <button type="button" onClick={onClose}>取消</button>
       </div>
     </Dialog>

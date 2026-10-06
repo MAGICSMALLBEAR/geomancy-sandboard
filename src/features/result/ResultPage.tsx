@@ -13,6 +13,7 @@ import { ResultView } from '../../components/ResultView.tsx';
 import { METHOD_LABEL } from '../../content/labels.ts';
 import { ShareImageDialog } from './ShareImageDialog.tsx';
 import { OutcomeEditor } from './OutcomeEditor.tsx';
+import { PlanEditor } from './PlanEditor.tsx';
 import { clearPending, completeCast, getPending, hasPending } from '../casting/pending.ts';
 
 type Load =
@@ -263,6 +264,7 @@ export function ResultPage() {
         notes={saved
           ? <>
               <NotesEditor key={record.id} record={record} onSaved={next => setLoad({ status: 'ok', record: next, saved: true })} />
+              <PlanEditor key={`plan-${record.id}`} record={record} onSaved={next => setLoad({ status: 'ok', record: next, saved: true })} />
               <OutcomeEditor key={`outcome-${record.id}`} record={record} onSaved={next => setLoad({ status: 'ok', record: next, saved: true })} />
               <FeedbackForm />
             </>

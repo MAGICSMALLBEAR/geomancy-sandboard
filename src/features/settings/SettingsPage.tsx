@@ -12,10 +12,11 @@ import { MAX_IMPORT_BYTES, asCopy, buildExportFiles, downloadText, parseImport, 
 import type { ArchiveEntry, MotionSetting } from '../../infrastructure/repository.ts';
 import { ThemePicker } from '../../components/ThemePicker.tsx';
 import { hapticsSupported } from '../../app/haptics.ts';
+import { persistState, requestPersist, storageUsage, type PersistState } from '../../app/storage.ts';
 import { formatDate } from '../../content/labels.ts';
 import { Dialog } from '../../components/Dialog.tsx';
 
-const APP_VERSION = '0.10.0';
+const APP_VERSION = '0.11.0';
 const MOTION_LABEL: Record<MotionSetting, string> = { system: '跟隨系統設定', reduce: '減少動態效果', full: '完整動態效果' };
 type Message = { kind: 'ok' | 'error'; text: string } | null;
 
@@ -119,6 +120,43 @@ function ImportSection({ onDone }: { onDone: () => void }) {
   );
 }
 
+function KeepRecords() {
+  const [state, setState] = useState<PersistState | null>(null);
+  const [usage, setUsage] = useState<number | null>(null);
+  const [asked, setAsked] = useState(false);
+  const [working, setWorking] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    Promise.all([persistState(), storageUsage()]).then(([p, u]) => { if (alive) { setState(p); setUsage(u); } });
+    return () => { alive = false; };
+  }, []);
+
+  const ask = async () => {
+    setWorking(true);
+    const next = await requestPersist();
+    setState(next);
+    setAsked(true);
+    setWorking(false);
+  };
+
+  if (state === null) return null;
+  return (
+    <div className="keep-records">
+      <h3>請瀏覽器保留記錄</h3>
+      {state === 'persisted' && <p className="notice is-ok" role={asked ? 'status' : undefined}>
+        瀏覽器已同意保留：裝置空間不足時，不會自動清掉這裡的記錄。自己清除網站資料時記錄仍會消失，請照常匯出備份。</p>}
+      {state === 'not-persisted' && <>
+        <p>目前沒有保留保證：裝置空間不足時，瀏覽器可能自動清掉這裡的記錄。</p>
+        <button type="button" disabled={working} onClick={() => void ask()}>請瀏覽器保留記錄</button>
+        {asked && <p className="notice" role="status">瀏覽器這次沒有同意。Chrome 通常要先把 App 加入主畫面或常用這個網站才會同意；Safari 依使用情況自行決定。請定期匯出備份。</p>}
+      </>}
+      {state === 'unsupported' && <p className="muted">這個瀏覽器無法要求保留記錄，請定期匯出備份。</p>}
+      {usage !== null && <p className="muted">這個網站目前使用約 {usage < 1024 * 1024 ? `${Math.max(1, Math.round(usage / 1024))} KB` : `${(usage / 1024 / 1024).toFixed(1)} MB`}（含離線檔案）。</p>}
+    </div>
+  );
+}
+
 export function SettingsPage() {
   const { repo, settings, updateSetting } = useApp();
   const pwa = usePwa();
@@ -185,7 +223,7 @@ export function SettingsPage() {
               <span>{MOTION_LABEL[option]}</span>
             </label>
           ))}
-          <p className="muted">減少動態效果只改變顯示方式，不影響盤面與解讀。</p>
+          <p className="muted">減少動態效果只改變顯示方式，不影響盤面與解讀。較慢的裝置會自動改用簡化沙盤：不顯示沙粒飛散，點痕與收點動畫照常。</p>
         </fieldset>
         <label className="check">
           <input type="checkbox" checked={settings.sound} onChange={event => change('sound', event.target.checked)} />
@@ -206,6 +244,7 @@ export function SettingsPage() {
           <button type="button" disabled={counts.readings === 0} onClick={() => setExportOpen(true)}>全部匯出</button>
         </div>
         <ImportSection onDone={refresh} />
+        {repo.mode !== 'memory' && <KeepRecords />}
 
         <h3>封存檔</h3>
         {archives.length === 0

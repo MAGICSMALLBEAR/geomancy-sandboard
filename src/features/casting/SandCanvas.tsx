@@ -20,6 +20,16 @@ const MAX_DRAWN_MARKS = 300;
 const MAX_PARTICLES = 300;
 const PARTICLE_MS = 220;
 export const REDUCE_MS = 520;
+/** Lite mode starts when animated frames average slower than this (about 22 fps)... */
+const SLOW_FRAME_MS = 45;
+/** ...measured over this many consecutive animated frames. */
+const SLOW_SAMPLE = 12;
+
+/** Few cores or little memory: start in lite mode (plan §11: weak devices get a static tray). */
+export function looksLowPower(nav: { hardwareConcurrency?: number; deviceMemory?: number } = navigator): boolean {
+  return (typeof nav.hardwareConcurrency === 'number' && nav.hardwareConcurrency > 0 && nav.hardwareConcurrency <= 2)
+    || (typeof nav.deviceMemory === 'number' && nav.deviceMemory > 0 && nav.deviceMemory <= 2);
+}
 
 /** Colours come from the theme's CSS tokens (app.css), so the tray follows the chosen theme. */
 const palette = (el: Element) => {
@@ -44,6 +54,8 @@ export const SandCanvas = forwardRef<SandCanvasHandle, { reducedMotion: boolean 
   const model = useRef({
     marks: [] as Mark[], total: 0, particles: [] as Particle[], pending: null as Mark | null,
     reduce: null as { start: number; keep: 1 | 2 } | null, frame: 0, reduced: reducedMotion,
+    /** No particles and no blur; set from the device or from measured slow frames, never cleared mid-session. */
+    lite: looksLowPower(),
   });
 
   useEffect(() => { model.current.reduced = reducedMotion; }, [reducedMotion]);
@@ -53,6 +65,27 @@ export const SandCanvas = forwardRef<SandCanvasHandle, { reducedMotion: boolean 
     if (!canvas) return;
     const m = model.current;
 
+    let colors = palette(canvas);
+    // The sand texture is static: drawn once per size and theme, then copied each frame.
+    let texture: { canvas: HTMLCanvasElement; key: string } | null = null;
+    const backdrop = (w: number, h: number, dpr: number) => {
+      const key = `${w}x${h}@${dpr}|${colors.base}|${colors.grain}`;
+      if (texture?.key !== key) {
+        const tile = texture?.canvas ?? document.createElement('canvas');
+        tile.width = Math.round(w * dpr);
+        tile.height = Math.round(h * dpr);
+        const c = tile.getContext('2d');
+        if (!c) return null;
+        c.setTransform(dpr, 0, 0, dpr, 0, 0);
+        c.fillStyle = colors.base;
+        c.fillRect(0, 0, w, h);
+        c.fillStyle = colors.grain;
+        for (let i = 0; i < 140; i++) c.fillRect(jitter(i) * w, jitter(i + 500) * h, 1.5, 1.5);
+        texture = { canvas: tile, key };
+      }
+      return texture.canvas;
+    };
+
     const draw = (now: number) => {
       const context = canvas.getContext('2d');
       if (!context) return false;
@@ -61,12 +94,11 @@ export const SandCanvas = forwardRef<SandCanvasHandle, { reducedMotion: boolean 
         canvas.width = Math.round(w * dpr);
         canvas.height = Math.round(h * dpr);
       }
+      const tile = backdrop(w, h, dpr);
+      context.setTransform(1, 0, 0, 1, 0, 0);
+      if (tile) context.drawImage(tile, 0, 0);
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const colors = palette(canvas);
-      context.fillStyle = colors.base;
-      context.fillRect(0, 0, w, h);
-      context.fillStyle = colors.grain;
-      for (let i = 0; i < 140; i++) context.fillRect(jitter(i) * w, jitter(i + 500) * h, 1.5, 1.5);
+      if (!tile) { context.fillStyle = colors.base; context.fillRect(0, 0, w, h); }
 
       const progress = m.reduce ? Math.min(1, (now - m.reduce.start) / (m.reduced ? 1 : REDUCE_MS)) : 0;
       const marks = m.marks.slice(-MAX_DRAWN_MARKS);
@@ -90,7 +122,7 @@ export const SandCanvas = forwardRef<SandCanvasHandle, { reducedMotion: boolean 
         context.fillStyle = colors.rim;
         context.beginPath(); context.arc(x, y + 1.5, 10, 0, Math.PI * 2); context.fill();
         context.shadowColor = colors.mid;
-        context.shadowBlur = colors.glow;
+        context.shadowBlur = m.lite ? 0 : colors.glow;
         context.fillStyle = colors.mid;
         context.beginPath(); context.arc(x, y, 8, 0, Math.PI * 2); context.fill();
         context.shadowBlur = 0;
@@ -115,9 +147,21 @@ export const SandCanvas = forwardRef<SandCanvasHandle, { reducedMotion: boolean 
       return m.particles.length > 0 || (m.reduce !== null && progress < 1);
     };
 
+    // Frame-time watchdog: only gaps between consecutive animated frames count, not idle time.
+    let last = 0, slow = 0, sampled = 0;
     const tick = (now: number) => {
       m.frame = 0;
-      if (draw(now) && !document.hidden) m.frame = requestAnimationFrame(tick);
+      const animating = draw(now) && !document.hidden;
+      if (animating && last && !m.lite) {
+        sampled += 1;
+        slow += now - last;
+        if (sampled >= SLOW_SAMPLE) {
+          if (slow / sampled > SLOW_FRAME_MS) { m.lite = true; m.particles = []; canvas.dataset.lite = 'true'; }
+          sampled = 0; slow = 0;
+        }
+      }
+      last = animating ? now : 0;
+      if (animating) m.frame = requestAnimationFrame(tick);
     };
     const schedule = () => { if (!m.frame) m.frame = requestAnimationFrame(tick); };
     scheduleRef.current = schedule;
@@ -125,9 +169,10 @@ export const SandCanvas = forwardRef<SandCanvasHandle, { reducedMotion: boolean 
     const observer = new ResizeObserver(schedule);
     observer.observe(canvas);
     // Redraw when the theme changes while the tray is open.
-    const themeWatch = new MutationObserver(schedule);
+    const themeWatch = new MutationObserver(() => { colors = palette(canvas); schedule(); });
     themeWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     document.addEventListener('visibilitychange', schedule);
+    if (m.lite) canvas.dataset.lite = 'true';
     schedule();
     return () => {
       observer.disconnect();
@@ -145,7 +190,7 @@ export const SandCanvas = forwardRef<SandCanvasHandle, { reducedMotion: boolean 
       m.total += 1;
       m.marks.push({ x, y });
       if (m.marks.length > MAX_DRAWN_MARKS) m.marks.shift();
-      if (!m.reduced) {
+      if (!m.reduced && !m.lite) {
         const born = performance.now();
         for (let i = 0; i < 6 && m.particles.length < MAX_PARTICLES; i++) {
           const angle = jitter(m.total * 7 + i) * Math.PI * 2, distance = 10 + jitter(m.total * 13 + i) * 14;

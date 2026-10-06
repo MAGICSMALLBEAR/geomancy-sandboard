@@ -18,6 +18,8 @@ export interface ReadingRecord {
   notes: string;
   /** What happened afterwards, written by the user later (DECISIONS D30). Optional; older records have none. */
   outcome?: Outcome;
+  /** What the user means to do next and when to look back (DECISIONS D37). Optional; older records have none. */
+  plan?: ActionPlan;
   integrity: 'verified';
   importOrigin?: { originalId: string; importedAt: string };
 }
@@ -26,6 +28,13 @@ export const OUTCOME_STATUSES: readonly OutcomeStatus[] = ['matched', 'partly', 
 export interface Outcome {
   status: OutcomeStatus;
   text: string;
+  recordedAt: string;
+}
+export interface ActionPlan {
+  /** May be empty when only a review date is set. */
+  action: string;
+  /** Local calendar date `YYYY-MM-DD`; absent when the user set none. */
+  reviewOn?: string;
   recordedAt: string;
 }
 export interface Draft {

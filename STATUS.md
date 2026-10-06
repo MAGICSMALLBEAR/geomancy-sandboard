@@ -1,6 +1,6 @@
 # 目前實際狀態
 
-最後更新：2026-10-06 · App 版本 0.10.0（測試版）
+最後更新：2026-10-06 · App 版本 0.11.0（測試版）
 
 **M0–M5 已實作，可在電腦瀏覽器從提問走到回顧記錄。0.4.0 依產品負責人試用回饋加入：點沙判定放寬、自動點沙、三種外觀主題、進階解讀（成事關係、點之道、證人與裁判、十二宮逐宮，草稿）。自動測試全部通過，含 Chromium、Edge、Firefox、Playwright WebKit 與模擬縮放。真機（iPhone／Android）、macOS Safari、讀屏尚未由人實測；M6 使用者試用與專家審校尚未開始。**
 
@@ -57,6 +57,11 @@
 - [x] **0.10.0（2026-10-06）星座與元素對照**（D36）
   - 十六象頁新增「星座與元素」；學習區新增「行星、星座與元素對照」完整表。星座以 Agrippa 行星法為主、Gerard of Cremona 並列；元素並列七份文獻，以最早的 Cattan（1591）為對照基準標出差異。
   - 資料由程式從來源網頁的原始表格產生並交叉核對，照原表呈現；原始文獻（Agrippa、Cattan 等原書）本案未直接核對。
+- [x] **0.11.0（2026-10-06）企劃書中可直接完成的小項目，第二批**（D37–D39）
+  - **預計行動與回顧日期**：結果頁新增「接下來打算怎麼做」，可寫打算做的事、選回顧日期（一週、兩週、一個月、三個月後）。到了回顧日首頁會提醒，沒設日期仍是超過一週提醒；日誌新增「到了回顧的時候」篩選與「該回顧了」標記。記錄新增選填欄位 `plan`，匯出匯入逐欄驗證。
+  - **請瀏覽器保留記錄**：設定頁「資料管理」顯示是否已保留與網站使用量，按下才請求 `navigator.storage.persist()`；拒絕時照實說明。
+  - **分享圖片**：「存成圖片」在能分享檔案的瀏覽器多一個「分享…」，交給系統分享選單。
+  - **沙盤效能**：背景沙紋只畫一次再複製；CPU 核心或記憶體很少、或動畫明顯掉幀的裝置自動改用簡化沙盤（不畫沙粒飛散與光暈）。計數不受影響。門檻未經真機量測。
 ## 測試網址
 
 **https://magicsmallbear.github.io/geomancy-sandboard/**（GitHub Pages，原始碼 [MAGICSMALLBEAR/geomancy-sandboard](https://github.com/MAGICSMALLBEAR/geomancy-sandboard)，見 DECISIONS D20）。
@@ -74,9 +79,9 @@
 | `npm run typecheck` | 通過，0 錯誤 |
 | `npm run lint` | 通過，0 錯誤 0 警告 |
 | `npm run test:core` | 10 通過／0 失敗；輸出在 [core-test-report.tap](docs/core-test-report.tap) |
-| `npm run test:unit` | 11 個檔案、110 項通過（2026-10-06 0.10.0：對照表 3 項，依來源敘述反查資料；0.9.0：新增 `tests/unit/plan-items.test.ts`；0.8.0：新增 `tests/unit/followup.test.ts` 13 項，含 65,536 盤的相位與象的重現性質檢查、回顧的保存／衝突／刪除／匯出匯入；先前 89 項：內容版本 v2、四次長按、內容版本凍結 R05、十六象反轉／倒轉／對轉、65,536 盤確認裁判恰為八個偶數點象；手勢判定、點沙 reducer、自動點沙來源、Repository 在 fake-indexeddb 與記憶體兩種實作、匯入匯出邊界、成事關係各種情況、65,536 盤點之道性質、試用計時、圖片內容） |
-| `npm run build` | 成功；入口 JS gzip 161.83 KiB（目標 ≤250），CSS gzip 8.50 KiB，precache 14 項 |
-| `npm run test:e2e` | 55 通過、1 略過（2026-10-06 0.10.0，新增對照表 1 項，`zoom.spec.ts` 加入對照表頁；plan-items、zoom 另在三引擎 24 項通過。同日第一次全套執行時，試畫區與動畫略過各失敗 1 次（滿載逾時），單獨重跑 12 次與全套重跑皆通過。0.9.0：54 通過、1 略過，新增 `tests/e2e/plan-items.spec.ts` 4 項，`zoom.spec.ts` 加入古典禁例頁；plan-items、zoom、themes 另在三引擎共 33 項通過。0.8.0：50 通過、1 略過，新增 `tests/e2e/followup.spec.ts` 3 項：試畫區、相位與圓盤與回顧、首頁主題切換；`zoom.spec.ts` 加入試畫區。followup、themes、advanced、zoom 四個檔案另在 Chromium、Firefox、WebKit 一起跑，共 42 項通過。注意：本機若已有舊的 `vite preview` 佔用 4173，Playwright 會沿用它而測到舊版；本輪改用另一個 port 對新 build 執行。先前紀錄：47 通過、1 略過，含新增 `tests/e2e/content.spec.ts`；2026-10-04 新增 `tests/e2e/press.spec.ts` 3 項；四次長按另在 Firefox、WebKit 各跑 3 項皆通過；2026-10-03 含新增 `tests/e2e/learn.spec.ts` 3 項；縮放測試加入兩個新頁）（P05b 只在 WebKit 跑），Playwright Chromium 153.0.8010.12，對 production build（`vite preview`）執行 |
+| `npm run test:unit` | 12 個檔案、121 項通過（2026-10-06 0.11.0：新增 `tests/unit/small-items.test.ts` 11 項，含 plan 在兩種 Repository 的保存／衝突／驗證、備份往返、回顧日判斷、持久儲存請求、低效能判斷；0.10.0：對照表 3 項，依來源敘述反查資料；0.9.0：新增 `tests/unit/plan-items.test.ts`；0.8.0：新增 `tests/unit/followup.test.ts` 13 項，含 65,536 盤的相位與象的重現性質檢查、回顧的保存／衝突／刪除／匯出匯入；先前 89 項：內容版本 v2、四次長按、內容版本凍結 R05、十六象反轉／倒轉／對轉、65,536 盤確認裁判恰為八個偶數點象；手勢判定、點沙 reducer、自動點沙來源、Repository 在 fake-indexeddb 與記憶體兩種實作、匯入匯出邊界、成事關係各種情況、65,536 盤點之道性質、試用計時、圖片內容） |
+| `npm run build` | 成功；入口 JS gzip 171.34 kB（約 167 KiB，目標 ≤250 KiB），CSS gzip 8.75 kB，precache 14 項（2026-10-06 0.11.0；先前此行的 161.83 KiB 是較早版本的數字，0.10.0 實測為 168.31 kB） |
+| `npm run test:e2e` | 61 通過、1 略過（2026-10-06 0.11.0，新增 `tests/e2e/small-items.spec.ts` 6 項，另在 Firefox、WebKit 各 6 項通過；全套一次通過。0.10.0：55 通過、1 略過，新增對照表 1 項，`zoom.spec.ts` 加入對照表頁；plan-items、zoom 另在三引擎 24 項通過。同日第一次全套執行時，試畫區與動畫略過各失敗 1 次（滿載逾時），單獨重跑 12 次與全套重跑皆通過。0.9.0：54 通過、1 略過，新增 `tests/e2e/plan-items.spec.ts` 4 項，`zoom.spec.ts` 加入古典禁例頁；plan-items、zoom、themes 另在三引擎共 33 項通過。0.8.0：50 通過、1 略過，新增 `tests/e2e/followup.spec.ts` 3 項：試畫區、相位與圓盤與回顧、首頁主題切換；`zoom.spec.ts` 加入試畫區。followup、themes、advanced、zoom 四個檔案另在 Chromium、Firefox、WebKit 一起跑，共 42 項通過。注意：本機若已有舊的 `vite preview` 佔用 4173，Playwright 會沿用它而測到舊版；本輪改用另一個 port 對新 build 執行。先前紀錄：47 通過、1 略過，含新增 `tests/e2e/content.spec.ts`；2026-10-04 新增 `tests/e2e/press.spec.ts` 3 項；四次長按另在 Firefox、WebKit 各跑 3 項皆通過；2026-10-03 含新增 `tests/e2e/learn.spec.ts` 3 項；縮放測試加入兩個新頁）（P05b 只在 WebKit 跑），Playwright Chromium 153.0.8010.12，對 production build（`vite preview`）執行 |
 | `PW_EDGE=1 npx playwright test --project=msedge` | 40 通過、1 略過，本機安裝的 Microsoft Edge 154.0.4258.48 |
 | `PW_ENGINES=1 npx playwright test` | 120 通過、3 略過：Chromium、Firefox 155.0、WebKit 26.6（Playwright 的 Windows 版，不等於 macOS／iOS Safari）。需先 `npx playwright install firefox webkit` |
 
@@ -114,6 +119,9 @@
 - 主題設定是非同步寫入本機資料庫：切換後在極短時間內（毫秒級）重新整理，可能保留前一個主題。改版初期因全頁固定背景重繪較慢，自動測試曾 1/5 重現；已移除固定背景，重跑 32 次皆通過，但機制本身仍在。
 - 0.7.x 以前的 App 匯入含「後來怎樣了」的備份時，會略過這個欄位（記錄仍可匯入）。
 - 新視覺只在桌面 Chromium、Firefox、WebKit 與模擬手機寬度檢查過，真機與實際閱讀感受仍待試用。
+- 0.11.0：持久儲存與分享的自動測試是模擬瀏覽器 API 的回答；真正的 Chrome／Safari／Firefox 是否同意保留、手機分享選單的實際樣子都未實測。簡化沙盤的門檻（每幀 45 ms）是估計值，沒有在慢手機上量過。
+- 回顧日期以裝置的本地日期判斷，不存時區；跨時區或改了裝置時間，提醒日會跟著變。0.10.x 以前的 App 匯入含 `plan` 的備份時會略過這個欄位。
+- 日誌的篩選只在進入日誌頁時讀一次網址。已經在日誌頁時再換網址（例如從 `#/journal?review=due` 改成 `#/journal`），篩選會停在原本的選項（0.8.0 起就是如此）。
 
 - 進階解讀的文字（成事、點之道、證人與裁判、十二宮逐宮）是本產品原創草稿，十二宮逐宮是「象在宮中的傾向 × 宮位問題」的組合式文字，全部未經地占專家審校。成事規則依 G06、點之道依 G07；Greer 原書未能直接核對。宮位環狀相鄰、摘要排序是本產品的明確選擇（D24）。
 - 學習區新增的文字（十二宮常見範圍、位置說明、術語）同樣是未審校草稿；反轉／倒轉／對轉只是圖式對應，頁面已註明不代表意義相反。

@@ -206,6 +206,10 @@ button.primary:not(:disabled):active, .button.primary:active { transform: transl
 .outcome-badge.is-not-matched { color: var(--error); border-color: var(--error); background: var(--error-bg); }
 .outcome-badge.is-unclear, .outcome-badge.is-none { color: var(--muted); border-color: var(--line); background: var(--card); }
 .outcome-summary { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.outcome-badge.is-due { color: var(--on-accent); border-color: var(--accent); background: var(--accent); }
+.quick-dates button[aria-pressed="true"] { border-color: var(--accent); border-width: 2.5px; background: var(--accent-soft); }
+.plan input[type="date"] { max-width: 16rem; }
+.keep-records > button { margin: 4px 0 12px; }
 
 /* ── Journal ── */
 .journal-item { transition: box-shadow 160ms ease; }
