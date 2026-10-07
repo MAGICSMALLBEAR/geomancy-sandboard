@@ -1,6 +1,6 @@
 # 目前實際狀態
 
-最後更新：2026-10-06 · App 版本 0.11.0（測試版）
+最後更新：2026-10-07 · App 版本 0.12.0（測試版）
 
 **M0–M5 已實作，可在電腦瀏覽器從提問走到回顧記錄。0.4.0 依產品負責人試用回饋加入：點沙判定放寬、自動點沙、三種外觀主題、進階解讀（成事關係、點之道、證人與裁判、十二宮逐宮，草稿）。自動測試全部通過，含 Chromium、Edge、Firefox、Playwright WebKit 與模擬縮放。真機（iPhone／Android）、macOS Safari、讀屏尚未由人實測；M6 使用者試用與專家審校尚未開始。**
 
@@ -62,6 +62,13 @@
   - **請瀏覽器保留記錄**：設定頁「資料管理」顯示是否已保留與網站使用量，按下才請求 `navigator.storage.persist()`；拒絕時照實說明。
   - **分享圖片**：「存成圖片」在能分享檔案的瀏覽器多一個「分享…」，交給系統分享選單。
   - **沙盤效能**：背景沙紋只畫一次再複製；CPU 核心或記憶體很少、或動畫明顯掉幀的裝置自動改用簡化沙盤（不畫沙粒飛散與光暈）。計數不受影響。門檻未經真機量測。
+- [x] **0.12.0（2026-10-07）分享連結、Golden Dawn 入宮、AI 轉述、英文介面**（D40–D43）
+  - **分享連結**：結果頁「分享連結」，連結只帶四母象、主題、問題宮與宮位配置，問題文字要勾選才放；對方開啟時重新計算、只讀、不存入日誌。
+  - **Golden Dawn 入宮**：設定頁選新占問的入宮方式（預設順序入宮）；盾盤相同，只有入宮不同。學習區「十二宮與盤位」並列兩種。
+  - **AI 轉述（選用）**：自備 Anthropic API 金鑰，送出前預覽完整資料；問題文字預設不送，筆記與回顧永不送出。回覆逐段列出引用盤位並由程式查核，存入記錄。
+  - **英文介面**：頁首一鍵切換，英文瀏覽器首次造訪即為英文。英文記錄的基礎解讀是新的凍結內容版本 `en-basic-draft-v1`。
+  - 這批程式在 2026-10-07 前由另一個工作階段寫到一半（英文約完成四成、typecheck 有 8 個錯誤、文件未寫）；本輪補完英文、修正型別、補 WebKit 下 AI 測試會打到真實 API 的問題（service worker 讓 `page.route` 失效，改為在該檔封鎖 worker），並新增英文全頁檢查。
+
 ## 測試網址
 
 **https://magicsmallbear.github.io/geomancy-sandboard/**（GitHub Pages，原始碼 [MAGICSMALLBEAR/geomancy-sandboard](https://github.com/MAGICSMALLBEAR/geomancy-sandboard)，見 DECISIONS D20）。
@@ -79,9 +86,9 @@
 | `npm run typecheck` | 通過，0 錯誤 |
 | `npm run lint` | 通過，0 錯誤 0 警告 |
 | `npm run test:core` | 10 通過／0 失敗；輸出在 [core-test-report.tap](docs/core-test-report.tap) |
-| `npm run test:unit` | 12 個檔案、121 項通過（2026-10-06 0.11.0：新增 `tests/unit/small-items.test.ts` 11 項，含 plan 在兩種 Repository 的保存／衝突／驗證、備份往返、回顧日判斷、持久儲存請求、低效能判斷；0.10.0：對照表 3 項，依來源敘述反查資料；0.9.0：新增 `tests/unit/plan-items.test.ts`；0.8.0：新增 `tests/unit/followup.test.ts` 13 項，含 65,536 盤的相位與象的重現性質檢查、回顧的保存／衝突／刪除／匯出匯入；先前 89 項：內容版本 v2、四次長按、內容版本凍結 R05、十六象反轉／倒轉／對轉、65,536 盤確認裁判恰為八個偶數點象；手勢判定、點沙 reducer、自動點沙來源、Repository 在 fake-indexeddb 與記憶體兩種實作、匯入匯出邊界、成事關係各種情況、65,536 盤點之道性質、試用計時、圖片內容） |
-| `npm run build` | 成功；入口 JS gzip 171.34 kB（約 167 KiB，目標 ≤250 KiB），CSS gzip 8.75 kB，precache 14 項（2026-10-06 0.11.0；先前此行的 161.83 KiB 是較早版本的數字，0.10.0 實測為 168.31 kB） |
-| `npm run test:e2e` | 61 通過、1 略過（2026-10-06 0.11.0，新增 `tests/e2e/small-items.spec.ts` 6 項，另在 Firefox、WebKit 各 6 項通過；全套一次通過。0.10.0：55 通過、1 略過，新增對照表 1 項，`zoom.spec.ts` 加入對照表頁；plan-items、zoom 另在三引擎 24 項通過。同日第一次全套執行時，試畫區與動畫略過各失敗 1 次（滿載逾時），單獨重跑 12 次與全套重跑皆通過。0.9.0：54 通過、1 略過，新增 `tests/e2e/plan-items.spec.ts` 4 項，`zoom.spec.ts` 加入古典禁例頁；plan-items、zoom、themes 另在三引擎共 33 項通過。0.8.0：50 通過、1 略過，新增 `tests/e2e/followup.spec.ts` 3 項：試畫區、相位與圓盤與回顧、首頁主題切換；`zoom.spec.ts` 加入試畫區。followup、themes、advanced、zoom 四個檔案另在 Chromium、Firefox、WebKit 一起跑，共 42 項通過。注意：本機若已有舊的 `vite preview` 佔用 4173，Playwright 會沿用它而測到舊版；本輪改用另一個 port 對新 build 執行。先前紀錄：47 通過、1 略過，含新增 `tests/e2e/content.spec.ts`；2026-10-04 新增 `tests/e2e/press.spec.ts` 3 項；四次長按另在 Firefox、WebKit 各跑 3 項皆通過；2026-10-03 含新增 `tests/e2e/learn.spec.ts` 3 項；縮放測試加入兩個新頁）（P05b 只在 WebKit 跑），Playwright Chromium 153.0.8010.12，對 production build（`vite preview`）執行 |
+| `npm run test:unit` | 15 個檔案、145 項通過（2026-10-07 0.12.0：新增 `ai`、`goldenDawn`、`shareLink` 三個檔案；先前 12 個檔案、121 項，2026-10-06 0.11.0：新增 `tests/unit/small-items.test.ts` 11 項，含 plan 在兩種 Repository 的保存／衝突／驗證、備份往返、回顧日判斷、持久儲存請求、低效能判斷；0.10.0：對照表 3 項，依來源敘述反查資料；0.9.0：新增 `tests/unit/plan-items.test.ts`；0.8.0：新增 `tests/unit/followup.test.ts` 13 項，含 65,536 盤的相位與象的重現性質檢查、回顧的保存／衝突／刪除／匯出匯入；先前 89 項：內容版本 v2、四次長按、內容版本凍結 R05、十六象反轉／倒轉／對轉、65,536 盤確認裁判恰為八個偶數點象；手勢判定、點沙 reducer、自動點沙來源、Repository 在 fake-indexeddb 與記憶體兩種實作、匯入匯出邊界、成事關係各種情況、65,536 盤點之道性質、試用計時、圖片內容） |
+| `npm run build` | 成功；入口 JS gzip 213.09 kB（2026-10-07 0.12.0，約 208 KiB，目標 ≤250 KiB；AI 的 SDK 另成一個按需載入的檔案，gzip 50.30 kB，不計入入口），CSS gzip 8.93 kB，precache 18 項。先前 0.11.0：入口 JS gzip 171.34 kB（約 167 KiB，目標 ≤250 KiB），CSS gzip 8.75 kB，precache 14 項（2026-10-06 0.11.0；先前此行的 161.83 KiB 是較早版本的數字，0.10.0 實測為 168.31 kB） |
+| `npm run test:e2e` | 71 通過、1 略過（2026-10-07 0.12.0，新增 `ai`、`goldenDawn`、`sharing`、`english` 四個檔案；這四個檔案加上 learn、small-items、plan-items 另在 Firefox、WebKit 共 48 項通過。先前 0.11.0：61 通過、1 略過，2026-10-06 0.11.0，新增 `tests/e2e/small-items.spec.ts` 6 項，另在 Firefox、WebKit 各 6 項通過；全套一次通過。0.10.0：55 通過、1 略過，新增對照表 1 項，`zoom.spec.ts` 加入對照表頁；plan-items、zoom 另在三引擎 24 項通過。同日第一次全套執行時，試畫區與動畫略過各失敗 1 次（滿載逾時），單獨重跑 12 次與全套重跑皆通過。0.9.0：54 通過、1 略過，新增 `tests/e2e/plan-items.spec.ts` 4 項，`zoom.spec.ts` 加入古典禁例頁；plan-items、zoom、themes 另在三引擎共 33 項通過。0.8.0：50 通過、1 略過，新增 `tests/e2e/followup.spec.ts` 3 項：試畫區、相位與圓盤與回顧、首頁主題切換；`zoom.spec.ts` 加入試畫區。followup、themes、advanced、zoom 四個檔案另在 Chromium、Firefox、WebKit 一起跑，共 42 項通過。注意：本機若已有舊的 `vite preview` 佔用 4173，Playwright 會沿用它而測到舊版；本輪改用另一個 port 對新 build 執行。先前紀錄：47 通過、1 略過，含新增 `tests/e2e/content.spec.ts`；2026-10-04 新增 `tests/e2e/press.spec.ts` 3 項；四次長按另在 Firefox、WebKit 各跑 3 項皆通過；2026-10-03 含新增 `tests/e2e/learn.spec.ts` 3 項；縮放測試加入兩個新頁）（P05b 只在 WebKit 跑），Playwright Chromium 153.0.8010.12，對 production build（`vite preview`）執行 |
 | `PW_EDGE=1 npx playwright test --project=msedge` | 40 通過、1 略過，本機安裝的 Microsoft Edge 154.0.4258.48 |
 | `PW_ENGINES=1 npx playwright test` | 120 通過、3 略過：Chromium、Firefox 155.0、WebKit 26.6（Playwright 的 Windows 版，不等於 macOS／iOS Safari）。需先 `npx playwright install firefox webkit` |
 
@@ -112,8 +119,14 @@
 - [ ] 真實的儲存空間不足：自動測試是注入瀏覽器會丟出的同一種錯誤，沒有真的把磁碟配額用完。
 - [ ] 手機經區網 `http://192.168.x.x` 開啟：不是安全來源，預期沒有離線與安裝功能；這個情境沒有實測。真機測試請改用上方 HTTPS 測試網址。
 - [ ] M6：5–8 位使用者試用、地占專家逐條審校中文解讀。
+- [ ] AI 轉述從未對真實 API 送出過：自動測試全部攔截 api.anthropic.com。需要有人用自己的金鑰實際試一次（含婉拒、金鑰無效、取消）。
+- [ ] 英文文案未經母語者或地占專家審閱。
 
 ## 已知限制與問題
+
+- 0.12.0：AI 金鑰以明文存在瀏覽器的本機資料庫，能使用這台裝置的人都看得到（設定頁有說明）。瀏覽器直連 API 需要 `anthropic-dangerous-direct-browser-access` 標頭。
+- 0.12.0：英文介面下，匯入驗證失敗的細部原因只有中文，畫面只顯示錯誤類別；試用回饋匯出檔的說明欄位是中文。
+- 0.12.0：0.11.x 以前的 App 匯入含 `ai` 欄位或 Golden Dawn、英文記錄的備份時，會判為不支援的版本或略過欄位。
 
 - 0.8.0 新增的相位、象的重現、回顧用語與試畫區說明，都是未經專家審校的草稿；相位規則依常見西方實務整理（G08 書目），未能直接核對原書頁碼。
 - 主題設定是非同步寫入本機資料庫：切換後在極短時間內（毫秒級）重新整理，可能保留前一個主題。改版初期因全頁固定背景重繪較慢，自動測試曾 1/5 重現；已移除固定背景，重跑 32 次皆通過，但機制本身仍在。

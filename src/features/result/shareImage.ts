@@ -2,11 +2,12 @@
  * "Save as image" for a result (DECISIONS D25): drawn locally on a canvas and downloaded; nothing is uploaded.
  * The question text is left out unless the user asks for it, because images are easily passed around.
  */
-import { VISUAL_ROWS, toDots, type Chart, type NodeId } from '../../domain/geomancy.ts';
-import { figureInfo, HOUSES } from '../../domain/catalog.ts';
+import { VISUAL_ROWS, toDots, type Chart, type NodeId, type RuleVersion } from '../../domain/geomancy.ts';
+import { figureInfo } from '../../domain/catalog.ts';
 import type { Question } from '../../domain/reading.ts';
-import { findPerfection, PERFECTION_LABEL } from '../../domain/advanced.ts';
-import { TOPIC_LABEL } from '../../content/labels.ts';
+import { advancedLabels, findPerfection } from '../../domain/advanced.ts';
+import { labelsFor } from '../../content/labels.ts';
+import type { Lang } from '../../app/lang.ts';
 
 export const SHARE_WIDTH = 1080;
 export const SHARE_HEIGHT = 1350;
@@ -18,6 +19,7 @@ export type ShareContent = {
   topic: string;
   /** Shield rows as drawn, first mother on the right; the reconciler is left out. */
   rows: { node: NodeId; dots: string; name: string }[][];
+  judgeLabel: string;
   judge: { name: string; latin: string; keywords: string };
   perfection: string;
   footer: string;
@@ -25,29 +27,36 @@ export type ShareContent = {
 
 /** Pure: what goes on the image. */
 export function buildShareContent(
-  input: { chart: Chart; question: Question; dateLabel: string; methodLabel: string },
+  input: { chart: Chart; question: Question; dateLabel: string; methodLabel: string; rule?: RuleVersion; lang?: Lang },
   includeQuestion: boolean,
 ): ShareContent {
   const { chart, question } = input;
+  const en = input.lang === 'en', T = labelsFor(en ? 'en' : 'zh-TW'), LABEL = advancedLabels(T.lang).perfection;
   const judge = figureInfo(chart.J);
-  const result = findPerfection(chart, question.targetHouse);
+  const result = findPerfection(chart, question.targetHouse, input.rule);
+  const scope = (house: number) => (en ? `Perfection (house 1 × house ${house}): ` : `成事關係（第 1 宮 × 第 ${house} 宮）：`);
   const perfection = result.status === 'no-quesited'
-    ? '一般反思：沒有選定問題宮，不判斷成事關係'
+    ? (en ? 'General reflection: no question house chosen, so perfection is not judged' : '一般反思：沒有選定問題宮，不判斷成事關係')
     : result.hits.length
-      ? `成事關係（第 1 宮 × 第 ${result.quesited} 宮）：${PERFECTION_LABEL[result.hits[0].mode]}${result.hits.length > 1 ? `　等 ${result.hits.length} 項` : ''}`
-      : `成事關係（第 1 宮 × 第 ${result.quesited} 宮）：不成事（Denial）`;
+      ? scope(result.quesited) + LABEL[result.hits[0].mode] + (result.hits.length > 1 ? (en ? `, and ${result.hits.length - 1} more` : `　等 ${result.hits.length} 項`) : '')
+      : scope(result.quesited) + (en ? 'Denial' : '不成事（Denial）');
   return {
-    title: '地占沙盤',
-    meta: [input.dateLabel, input.methodLabel].filter(Boolean).join('・'),
+    title: en ? 'Geomancy Sand Tray' : '地占沙盤',
+    meta: [input.dateLabel, input.methodLabel].filter(Boolean).join(en ? ' · ' : '・'),
     question: includeQuestion ? question.text : null,
-    topic: TOPIC_LABEL[question.topic] + (question.targetHouse ? `・第 ${question.targetHouse} 宮：${HOUSES[question.targetHouse - 1]}` : ''),
+    topic: T.TOPIC_LABEL[question.topic] + (question.targetHouse
+      ? (en ? ` · house ${question.targetHouse}: ${T.HOUSES[question.targetHouse - 1]}` : `・第 ${question.targetHouse} 宮：${T.HOUSES[question.targetHouse - 1]}`) : ''),
     rows: VISUAL_ROWS.filter(row => !row.includes('R')).map(row => row.map(node => {
       const info = figureInfo(chart[node]);
-      return { node, dots: toDots(chart[node]), name: info.zh };
+      return { node, dots: toDots(chart[node]), name: en ? info.latin : info.zh };
     })),
-    judge: { name: judge.zh, latin: judge.latin, keywords: judge.keywords.join('、') },
+    judgeLabel: en ? 'Judge · overall theme' : '裁判・整體主題',
+    // In English the Latin name is the name, so the second line carries the gloss.
+    judge: en ? { name: judge.latin, latin: T.fullName(judge).slice(judge.latin.length + 1), keywords: T.list(T.keywords(judge)) }
+      : { name: judge.zh, latin: judge.latin, keywords: judge.keywords.join('、') },
     perfection,
-    footer: '象徵性解讀・內容草稿，未經專家審校。不是預測，重要決定仍需要實際資訊。',
+    footer: en ? 'A symbolic reading · draft content, not expert-reviewed. Not a prediction; important decisions still need real information.'
+      : '象徵性解讀・內容草稿，未經專家審校。不是預測，重要決定仍需要實際資訊。',
   };
 }
 
@@ -174,7 +183,7 @@ export function drawShareImage(canvas: HTMLCanvasElement, content: ShareContent)
   ctx.stroke();
   ctx.fillStyle = t.muted;
   ctx.font = `400 26px ${t.body}`;
-  ctx.fillText('裁判・整體主題', M + 32, y + 52);
+  ctx.fillText(content.judgeLabel, M + 32, y + 52);
   ctx.fillStyle = t.text;
   ctx.font = `700 52px ${t.head}`;
   ctx.fillText(content.judge.name, M + 32, y + 118);

@@ -3,15 +3,15 @@ import { Link, useSearchParams } from 'react-router';
 import { OUTCOME_STATUSES, type OutcomeStatus, type ReadingRecord } from '../../domain/contracts.ts';
 import type { Question } from '../../domain/reading.ts';
 import { useApp } from '../../app/AppContext.tsx';
-import { ERROR_TEXT, toAppError, type AppErrorCode } from '../../infrastructure/errors.ts';
+import { toAppError, type AppErrorCode } from '../../infrastructure/errors.ts';
 import { buildExportFiles, downloadText } from '../../infrastructure/importExport.ts';
-import { METHOD_LABEL, OUTCOME_LABEL, TOPIC_LABEL, figureOf, formatCalendarDate, formatDate } from '../../content/labels.ts';
+import { figureOf } from '../../content/labels.ts';
 import { isReviewDue } from '../../infrastructure/records.ts';
 import { Dialog } from '../../components/Dialog.tsx';
 import { FigureGlyph } from '../../components/FigureGlyph.tsx';
 
 export function JournalPage() {
-  const { repo } = useApp();
+  const { repo, L, T } = useApp();
   const [records, setRecords] = useState<ReadingRecord[] | null>(null);
   // One clock reading per load, so the badges and the "due" filter agree.
   const [now, setNow] = useState(() => new Date());
@@ -68,51 +68,51 @@ export function JournalPage() {
 
   return (
     <div className="journal">
-      <h1 className="page-title">日誌</h1>
-      <p className="page-lede">記錄只保存在這個瀏覽器。清除網站資料會讓它們消失，請定期匯出備份。</p>
+      <h1 className="page-title">{L('日誌', 'Journal')}</h1>
+      <p className="page-lede">{L('記錄只保存在這個瀏覽器。清除網站資料會讓它們消失，請定期匯出備份。', 'Records are kept only in this browser. Clearing site data removes them, so export a backup now and then.')}</p>
       {stats.total > 0 && (
-        <ul className="journal-stats" aria-label="日誌統計">
-          <li className="card"><strong>{stats.total}</strong><span>筆占問</span></li>
-          <li className="card"><strong>{stats.reviewed}</strong><span>已寫回顧</span></li>
-          <li className="card"><strong>{stats.total - stats.reviewed}</strong><span>待回顧</span></li>
-          <li className="card"><strong>{stats.notes}</strong><span>有筆記</span></li>
+        <ul className="journal-stats" aria-label={L('日誌統計', 'Journal statistics')}>
+          <li className="card"><strong>{stats.total}</strong><span>{L('筆占問', 'questions')}</span></li>
+          <li className="card"><strong>{stats.reviewed}</strong><span>{L('已寫回顧', 'looked back on')}</span></li>
+          <li className="card"><strong>{stats.total - stats.reviewed}</strong><span>{L('待回顧', 'to look back on')}</span></li>
+          <li className="card"><strong>{stats.notes}</strong><span>{L('有筆記', 'with notes')}</span></li>
         </ul>
       )}
-      {error && <p className="notice is-error" role="alert">{ERROR_TEXT[error]}</p>}
+      {error && <p className="notice is-error" role="alert">{T.error(error)}</p>}
 
       <div className="filters">
-        <label>主題
+        <label>{L('主題', 'Topic')}
           <select value={topic} onChange={event => setTopic(event.target.value as typeof topic)}>
-            <option value="all">全部</option>
-            {(Object.keys(TOPIC_LABEL) as Question['topic'][]).map(t => <option key={t} value={t}>{TOPIC_LABEL[t]}</option>)}
+            <option value="all">{L('全部', 'All')}</option>
+            {(Object.keys(T.TOPIC_LABEL) as Question['topic'][]).map(t => <option key={t} value={t}>{T.TOPIC_LABEL[t]}</option>)}
           </select>
         </label>
-        <label>後來怎樣了
+        <label>{L('後來怎樣了', 'What happened afterwards')}
           <select value={review} onChange={event => setReview(event.target.value as typeof review)}>
-            <option value="all">全部</option>
-            <option value="pending">尚未寫回顧</option>
-            <option value="due">到了回顧的時候</option>
-            {OUTCOME_STATUSES.map(o => <option key={o} value={o}>{OUTCOME_LABEL[o]}</option>)}
+            <option value="all">{L('全部', 'All')}</option>
+            <option value="pending">{L('尚未寫回顧', 'Not looked back on yet')}</option>
+            <option value="due">{L('到了回顧的時候', 'Due for a look back')}</option>
+            {OUTCOME_STATUSES.map(o => <option key={o} value={o}>{T.OUTCOME_LABEL[o]}</option>)}
           </select>
         </label>
-        <label>搜尋問題文字
+        <label>{L('搜尋問題文字', 'Search question text')}
           <input type="search" value={search} onChange={event => setSearch(event.target.value)} />
         </label>
       </div>
 
-      {records === null && !error && <p role="status">載入中…</p>}
+      {records === null && !error && <p role="status">{L('載入中…', 'Loading…')}</p>}
       {records !== null && records.length === 0 && (
-        <div className="card"><p>還沒有記錄。</p><Link className="button primary" to="/new">開始新的占問</Link></div>
+        <div className="card"><p>{L('還沒有記錄。', 'No records yet.')}</p><Link className="button primary" to="/new">{L('開始新的占問', 'Start a new question')}</Link></div>
       )}
-      {records !== null && records.length > 0 && visible.length === 0 && <p>沒有符合條件的記錄。</p>}
+      {records !== null && records.length > 0 && visible.length === 0 && <p>{L('沒有符合條件的記錄。', 'No records match.')}</p>}
 
       {visible.length > 0 && <>
         <div className="journal-tools">
-          <span role="status">{visible.length} 筆{chosen.length > 0 && `・已選 ${chosen.length} 筆`}</span>
+          <span role="status">{L(`${visible.length} 筆`, `${visible.length} records`)}{chosen.length > 0 && L(`・已選 ${chosen.length} 筆`, ` · ${chosen.length} selected`)}</span>
           <button type="button" onClick={() => setSelected(new Set(chosen.length === visible.length ? [] : visible.map(r => r.id)))}>
-            {chosen.length === visible.length ? '取消全選' : '全選'}
+            {chosen.length === visible.length ? L('取消全選', 'Select none') : L('全選', 'Select all')}
           </button>
-          <button type="button" disabled={chosen.length === 0} onClick={() => setExporting(true)}>匯出選取記錄</button>
+          <button type="button" disabled={chosen.length === 0} onClick={() => setExporting(true)}>{L('匯出選取記錄', 'Export selected')}</button>
         </div>
         <ul className="record-list">
           {visible.map(record => {
@@ -120,40 +120,41 @@ export function JournalPage() {
             return (
               <li key={record.id} className="card journal-item">
                 <input type="checkbox" checked={selected.has(record.id)} onChange={() => toggle(record.id)}
-                  aria-label={`選取：${record.question.text.slice(0, 40)}`} />
+                  aria-label={L(`選取：${record.question.text.slice(0, 40)}`, `Select: ${record.question.text.slice(0, 40)}`)} />
                 <FigureGlyph figure={record.chart.J} size={26} decorative />
                 <div className="journal-text">
                   <Link to={`/result/${record.id}`} className="record-link">{record.question.text}</Link>
-                  <p className="muted">{formatDate(record.createdAt)}・{TOPIC_LABEL[record.question.topic]}・{METHOD_LABEL[record.source.kind]}・裁判：{judge.zh}
-                    {record.notes && '・有筆記'}{record.importOrigin && '・匯入的副本'}</p>
+                  <p className="muted">{L(`${T.formatDate(record.createdAt)}・${T.TOPIC_LABEL[record.question.topic]}・${T.METHOD_LABEL[record.source.kind]}・裁判：${judge.zh}`,
+                      `${T.formatDate(record.createdAt)} · ${T.TOPIC_LABEL[record.question.topic]} · ${T.METHOD_LABEL[record.source.kind]} · Judge: ${T.name(judge)}`)}
+                    {record.ruleVersion !== 'western-sequential-v1' && L(`・${T.HOUSE_RULE_LABEL[record.ruleVersion]}`, ` · ${T.HOUSE_RULE_LABEL[record.ruleVersion]}`)}{record.notes && L('・有筆記', ' · has notes')}{record.importOrigin && L('・匯入的副本', ' · imported copy')}</p>
                   <p className="outcome-summary">
                     {isReviewDue(record, now)
-                      ? <span className="outcome-badge is-due">該回顧了</span>
-                      : <span className={`outcome-badge is-${record.outcome?.status ?? 'none'}`}>{record.outcome ? OUTCOME_LABEL[record.outcome.status] : '尚未寫回顧'}</span>}
-                    {!record.outcome && record.plan?.reviewOn && <span className="muted">預計 {formatCalendarDate(record.plan.reviewOn)} 回顧</span>}
+                      ? <span className="outcome-badge is-due">{L('該回顧了', 'Time to look back')}</span>
+                      : <span className={`outcome-badge is-${record.outcome?.status ?? 'none'}`}>{record.outcome ? T.OUTCOME_LABEL[record.outcome.status] : L('尚未寫回顧', 'Not looked back on yet')}</span>}
+                    {!record.outcome && record.plan?.reviewOn && <span className="muted">{L(`預計 ${T.formatCalendarDate(record.plan.reviewOn)} 回顧`, `Look back on ${T.formatCalendarDate(record.plan.reviewOn)}`)}</span>}
                   </p>
-                  {record.plan?.action && <p className="muted">打算：{record.plan.action.length > 60 ? `${record.plan.action.slice(0, 60)}…` : record.plan.action}</p>}
+                  {record.plan?.action && <p className="muted">{L('打算：', 'Plan: ')}{record.plan.action.length > 60 ? `${record.plan.action.slice(0, 60)}…` : record.plan.action}</p>}
                 </div>
-                <button type="button" className="danger" onClick={() => setDeleting(record)}>刪除</button>
+                <button type="button" className="danger" onClick={() => setDeleting(record)}>{L('刪除', 'Delete')}</button>
               </li>
             );
           })}
         </ul>
       </>}
 
-      <Dialog open={deleting !== null} title="刪除這筆記錄？" onClose={() => setDeleting(null)}>
+      <Dialog open={deleting !== null} title={L('刪除這筆記錄？', 'Delete this record?')} onClose={() => setDeleting(null)}>
         <p className="question-text">{deleting?.question.text}</p>
-        <p>刪除後無法復原。</p>
+        <p>{L('刪除後無法復原。', 'This cannot be undone.')}</p>
         <div className="dialog-actions">
-          <button type="button" className="primary" onClick={() => setDeleting(null)}>保留</button>
-          <button type="button" className="danger" onClick={() => void remove()}>刪除</button>
+          <button type="button" className="primary" onClick={() => setDeleting(null)}>{L('保留', 'Keep')}</button>
+          <button type="button" className="danger" onClick={() => void remove()}>{L('刪除', 'Delete')}</button>
         </div>
       </Dialog>
-      <Dialog open={exporting} title={`匯出 ${chosen.length} 筆記錄`} onClose={() => setExporting(false)}>
-        <p>匯出的檔案包含你的問題文字、盤面、解讀與筆記，請自行妥善保管。</p>
+      <Dialog open={exporting} title={L(`匯出 ${chosen.length} 筆記錄`, `Export ${chosen.length} records`)} onClose={() => setExporting(false)}>
+        <p>{L('匯出的檔案包含你的問題文字、盤面、解讀與筆記，請自行妥善保管。', 'The exported file contains your question text, charts, readings and notes. Keep it somewhere safe.')}</p>
         <div className="dialog-actions">
-          <button type="button" className="primary" onClick={exportChosen}>下載 JSON</button>
-          <button type="button" onClick={() => setExporting(false)}>取消</button>
+          <button type="button" className="primary" onClick={exportChosen}>{L('下載 JSON', 'Download JSON')}</button>
+          <button type="button" onClick={() => setExporting(false)}>{L('取消', 'Cancel')}</button>
         </div>
       </Dialog>
     </div>

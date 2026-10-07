@@ -1,7 +1,8 @@
-import { RULE_VERSION, type Mothers, type NodeId } from './geomancy.ts';
+import { RULE_VERSION, type Mothers, type NodeId, type RuleVersion } from './geomancy.ts';
 import { CONTENT_VERSION } from './catalog.ts';
 import { buildReadingV1, CONTENT_V1 } from './readingV1.ts';
 import { buildReadingV2, CONTENT_V2 } from './readingV2.ts';
+import { buildReadingEn1, CONTENT_EN1 } from './readingEn1.ts';
 
 export type Question = {
   text: string; timeframe: string;
@@ -39,7 +40,7 @@ export type Claim = {
   sourceIds: string[];
 };
 export type Reading = {
-  ruleVersion: typeof RULE_VERSION;
+  ruleVersion: RuleVersion;
   contentVersion: ContentVersion;
   scope: 'basic-symbolic';
   /** 'expert-reviewed' is reserved for a version whose every claim passed expert review. */
@@ -48,11 +49,12 @@ export type Reading = {
 };
 
 /** Every content version this build can rebuild and verify. Add new ones; never remove or edit old ones (R05). */
-const BUILDERS: Record<ContentVersion, (mothers: Mothers, question: Question) => Reading> = {
+const BUILDERS: Record<ContentVersion, (mothers: Mothers, question: Question, rule: RuleVersion) => Reading> = {
   [CONTENT_V1]: buildReadingV1,
   [CONTENT_V2]: buildReadingV2,
+  [CONTENT_EN1]: buildReadingEn1,
 };
-export type ContentVersion = typeof CONTENT_V1 | typeof CONTENT_V2;
+export type ContentVersion = typeof CONTENT_V1 | typeof CONTENT_V2 | typeof CONTENT_EN1;
 export const isKnownContentVersion = (v: unknown): v is ContentVersion =>
   typeof v === 'string' && Object.prototype.hasOwnProperty.call(BUILDERS, v);
 
@@ -60,7 +62,10 @@ export const isKnownContentVersion = (v: unknown): v is ContentVersion =>
  * Recomputes the chart; ignores question text for symbolic inference. No prediction or AI.
  * New records use the current CONTENT_VERSION; old records are rebuilt with the version they were saved with.
  */
-export function buildReading(mothers: Mothers, question: Question, version: ContentVersion = CONTENT_VERSION): Reading {
+export function buildReading(mothers: Mothers, question: Question, version: ContentVersion = CONTENT_VERSION,
+  rule: RuleVersion = RULE_VERSION): Reading {
   assertQuestion(question);
-  return BUILDERS[version](mothers, question);
+  // v1 predates other house rules: no record can pair it with one.
+  if (version === CONTENT_V1 && rule !== RULE_VERSION) throw new Error('UNSUPPORTED_VERSION');
+  return BUILDERS[version](mothers, question, rule);
 }

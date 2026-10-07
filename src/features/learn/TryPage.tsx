@@ -9,13 +9,13 @@ import { useApp } from '../../app/AppContext.tsx';
 import { playTap } from '../../app/sound.ts';
 import { buzzConfirm, buzzTap } from '../../app/haptics.ts';
 import { ROW_MAX_DOTS } from '../../infrastructure/records.ts';
-import { ROW_ELEMENT, dotWord, figureOf } from '../../content/labels.ts';
+import { figureOf } from '../../content/labels.ts';
 import { FigureGlyph } from '../../components/FigureGlyph.tsx';
 import { beginTap, judgeRelease, trackTap, type TapCandidate } from '../casting/gesture.ts';
 import { REDUCE_MS, SandCanvas, type SandCanvasHandle } from '../casting/SandCanvas.tsx';
 
 export function TryPage() {
-  const { settings, reducedMotion } = useApp();
+  const { settings, reducedMotion, L, T } = useApp();
   const [count, setCount] = useState(0);
   const [rows, setRows] = useState<number[]>([]);
   const [showCount, setShowCount] = useState(true);
@@ -68,8 +68,9 @@ export function TryPage() {
     candidate.current = null;
     canvas.current?.setPending(null);
     if (verdict === 'tap') addDot(() => canvas.current?.addMark(point.x, point.y));
-    else setHint(verdict === 'moved' ? '這次手指移動太多，被當成拖動，沒有算進去。正式起卦也是這樣判定。'
-      : verdict === 'too-long' ? '按太久了（超過 1.5 秒），沒有算進去。輕點一下就好。' : '在沙盤外放開，沒有算進去。');
+    else setHint(verdict === 'moved' ? L('這次手指移動太多，被當成拖動，沒有算進去。正式起卦也是這樣判定。', 'Your finger moved too much, so it counted as a drag and was not added. A real cast judges it the same way.')
+      : verdict === 'too-long' ? L('按太久了（超過 1.5 秒），沒有算進去。輕點一下就好。', 'Held too long (over 1.5 seconds), so it did not count. A light tap is enough.')
+      : L('在沙盤外放開，沒有算進去。', 'Released outside the tray, so it did not count.'));
   };
   const onPointerAbort = (event: ReactPointerEvent) => {
     if (candidate.current?.pointerId !== event.pointerId) return;
@@ -83,7 +84,7 @@ export function TryPage() {
     const fixed = counter.current;
     setReveal(fixed);
     if (settings.haptics) buzzConfirm();
-    setAnnounce(`這一列 ${fixed} 點，${fixed % 2 === 1 ? '奇數' : '偶數'}，記為${dotWord(fixed % 2)}。`);
+    setAnnounce(L(`這一列 ${fixed} 點，${T.parity(fixed)}，記為${T.dotWord(fixed % 2)}。`, `This row has ${fixed} dots, ${T.parity(fixed)}, recorded as ${T.dotWord(fixed % 2)}.`));
     canvas.current?.reduce(fixed % 2 === 1 ? 1 : 2);
     timer.current = window.setTimeout(() => {
       canvas.current?.clear();
@@ -113,58 +114,58 @@ export function TryPage() {
 
   return (
     <div className="try">
-      <p className="eyebrow"><Link to="/learn">教學</Link>・試畫區</p>
-      <h1 className="page-title">試畫區：先練習點沙</h1>
-      <p className="page-lede">在正式起卦前，先感受一下：隨意點幾下、按「完成這列」，看成對的點痕如何消去，剩下一點或兩點。
-        點滿四列會組成一個象。<strong>這裡的點不會保存，也不會變成正式的盤。</strong></p>
+      <p className="eyebrow"><Link to="/learn">{L('教學', 'Learn')}</Link>{L('・試畫區', ' · Practice tray')}</p>
+      <h1 className="page-title">{L('試畫區：先練習點沙', 'Practice tray: try tapping first')}</h1>
+      <p className="page-lede">{L('在正式起卦前，先感受一下：隨意點幾下、按「完成這列」，看成對的點痕如何消去，剩下一點或兩點。點滿四列會組成一個象。', 'Get a feel for it before a real cast: tap a few times at random, press "Finish this row", and watch the marks cancel in pairs, leaving one dot or two. Four rows make a figure. ')}
+        <strong>{L('這裡的點不會保存，也不會變成正式的盤。', 'Nothing here is saved or becomes a real chart.')}</strong></p>
 
       {!done && <>
-        <p className="cast-progress"><strong>練習第 {rows.length + 1} 列</strong>
-          <span className="muted">（{ROW_ELEMENT[rows.length]}行・共 4 列）</span></p>
+        <p className="cast-progress"><strong>{L(`練習第 ${rows.length + 1} 列`, `Practice row ${rows.length + 1}`)}</strong>
+          <span className="muted">{L(`（${T.ROW_ELEMENT[rows.length]}行・共 4 列）`, ` (${T.ROW_ELEMENT[rows.length]} line · 4 rows)`)}</span></p>
         <label className="check">
           <input type="checkbox" checked={showCount} onChange={event => setShowCount(event.target.checked)} />
-          顯示目前點數（正式起卦時不顯示，避免刻意計數）
+          {L('顯示目前點數（正式起卦時不顯示，避免刻意計數）', 'Show the count so far (hidden in a real cast so you do not count on purpose)')}
         </label>
-        {showCount && <p className="try-count" aria-live="off">目前 {count} 點{count > 0 && `（${count % 2 === 1 ? '奇數 → 一點' : '偶數 → 兩點'}）`}</p>}
+        {showCount && <p className="try-count" aria-live="off">{L(`目前 ${count} 點`, `${count} dots so far`)}{count > 0 && L(`（${count % 2 === 1 ? '奇數 → 一點' : '偶數 → 兩點'}）`, ` (${count % 2 === 1 ? 'odd → one dot' : 'even → two dots'})`)}</p>}
         <div ref={tray} className={`sand-tray${reveal === null ? '' : ' is-locked'}`}
           onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
           onPointerCancel={onPointerAbort} onLostPointerCapture={onPointerAbort} onContextMenu={event => event.preventDefault()}>
           <SandCanvas ref={canvas} reducedMotion={reducedMotion} />
           {reveal !== null && (
-            <div className="tray-overlay"><p>{reveal} 點，{reveal % 2 === 1 ? '奇數' : '偶數'} → 兩兩配對消去後剩{dotWord(reveal % 2)}</p></div>
+            <div className="tray-overlay"><p>{L(`${reveal} 點，${T.parity(reveal)} → 兩兩配對消去後剩${T.dotWord(reveal % 2)}`, `${reveal} dots, ${T.parity(reveal)} → after cancelling in pairs, ${T.dotWord(reveal % 2)} remain`)}</p></div>
           )}
         </div>
         <p className="hint" role="status">{hint}</p>
         <div className="action-bar">
           <button type="button" disabled={reveal !== null} onKeyDown={event => { if (event.repeat) event.preventDefault(); }}
-            onClick={() => addDot(() => canvas.current?.addMarkAuto())}>加入一點</button>
-          <button type="button" disabled={reveal !== null || count === 0} onClick={clearRow}>清空本列</button>
-          <button type="button" className="primary" disabled={reveal !== null || count === 0} onClick={finishRow}>完成這列</button>
+            onClick={() => addDot(() => canvas.current?.addMarkAuto())}>{L('加入一點', 'Add a dot')}</button>
+          <button type="button" disabled={reveal !== null || count === 0} onClick={clearRow}>{L('清空本列', 'Clear this row')}</button>
+          <button type="button" className="primary" disabled={reveal !== null || count === 0} onClick={finishRow}>{L('完成這列', 'Finish this row')}</button>
         </div>
       </>}
 
       {rows.length > 0 && (
-        <section className="card" aria-label="練習結果">
-          <h2>{done ? '你點出了一個象' : '已完成的練習列'}</h2>
+        <section className="card" aria-label={L('練習結果', 'Practice result')}>
+          <h2>{done ? L('你點出了一個象', 'You tapped out a figure') : L('已完成的練習列', 'Practice rows done')}</h2>
           <div className="try-figure">
             <ol className="try-rows">
               {rows.map((n, i) => (
-                <li key={i}><span className="muted">{ROW_ELEMENT[i]}行</span><span>{n} 點</span>
-                  <span className="dots" aria-hidden="true">{n % 2 === 1 ? '•' : '• •'}</span><span>{dotWord(n % 2)}</span></li>
+                <li key={i}><span className="muted">{L(`${T.ROW_ELEMENT[i]}行`, `${T.ROW_ELEMENT[i]} line`)}</span><span>{L(`${n} 點`, `${n} dots`)}</span>
+                  <span className="dots" aria-hidden="true">{n % 2 === 1 ? '•' : '• •'}</span><span>{T.dotWord(n % 2)}</span></li>
               ))}
             </ol>
             {figure && <>
               <FigureGlyph figure={figure} size={56} />
-              <p><strong>{figureOf(figure).zh}／{figureOf(figure).latin}</strong><br />
-                <span className="muted">象徵主題：{figureOf(figure).keywords.join('、')}</span></p>
+              <p><strong>{T.fullName(figureOf(figure))}</strong><br />
+                <span className="muted">{L('象徵主題：', 'Themes: ')}{T.list(T.keywords(figureOf(figure)))}</span></p>
             </>}
           </div>
           {done && <>
-            <p>正式起卦會點十六列、得到四個這樣的象（四個母象），再推出整張盾盤。</p>
+            <p>{L('正式起卦會點十六列、得到四個這樣的象（四個母象），再推出整張盾盤。', 'A real cast taps sixteen rows to get four figures like this (the four Mothers), then works out the whole shield.')}</p>
             <div className="dialog-actions">
-              <Link className="button primary" to="/new">開始正式占問</Link>
-              <button type="button" onClick={restart}>再練習一次</button>
-              <Link className="button" to={`/learn/${figureOf(figure!).id}`}>認識「{figureOf(figure!).zh}」</Link>
+              <Link className="button primary" to="/new">{L('開始正式占問', 'Start a real question')}</Link>
+              <button type="button" onClick={restart}>{L('再練習一次', 'Practise again')}</button>
+              <Link className="button" to={`/learn/${figureOf(figure!).id}`}>{L(`認識「${figureOf(figure!).zh}」`, `About ${figureOf(figure!).latin}`)}</Link>
             </div>
           </>}
         </section>

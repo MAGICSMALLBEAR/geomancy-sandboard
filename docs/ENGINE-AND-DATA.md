@@ -7,8 +7,10 @@
 | 名稱 | 第一版值 | 變更原則 |
 |---|---|---|
 | `schemaVersion` | `1` | 儲存與匯出格式；破壞相容性需遷移 |
-| `ruleVersion` | `western-sequential-v1` | 算法、順序入宮、解讀技法的集合 |
-| `contentVersion` | `zh-TW-basic-draft-v1`；0.7.1 起新記錄為 `zh-TW-basic-draft-v2` | 中文象義與規則文案版本；已發布的版本凍結，改文字要新增版本（§10） |
+| `ruleVersion` | `western-sequential-v1`；0.12.0 起可選 `western-golden-dawn-v1`（盾盤相同，只有入宮不同，D41） | 算法、入宮方式、解讀技法的集合 |
+| `contentVersion` | `zh-TW-basic-draft-v1`；0.7.1 起新記錄為 `zh-TW-basic-draft-v2`；0.12.0 起英文介面的新記錄為 `en-basic-draft-v1`（D43） | 象義與規則文案版本；已發布的版本凍結，改文字要新增版本（§10）。v1 只與順序入宮配對 |
+
+記錄另有選填欄位 `ai`（0.12.0，D42）：使用者要求的 AI 轉述，照回覆保存（`model`、`promptVersion`、`sentQuestion`、`paragraphs[{heading,text,cites}]`、`usage`、`recordedAt`），不參與盤面與基礎解讀的驗證；匯入時以白名單逐欄重建。
 | `scope` | `basic-symbolic` | 本版只含基礎象徵解讀 |
 | `reviewStatus` | `editorial-draft` | 不得自行改成已審核 |
 

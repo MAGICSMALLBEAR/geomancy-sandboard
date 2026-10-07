@@ -2,11 +2,12 @@
  * Backup export and untrusted import. Imported JSON is never merged into live objects:
  * every record is rebuilt from whitelisted fields and re-derived from its own source.
  */
-import { constructChart, sourceToMothers, toDots, NODES, RULE_VERSION,
-  type CastSource, type Chart, type Figure, type Mothers, type NodeId } from '../domain/geomancy.ts';
+import { constructChart, isRuleVersion, sourceToMothers, toDots, NODES, RULE_VERSION,
+  type CastSource, type RuleVersion, type Chart, type Figure, type Mothers, type NodeId } from '../domain/geomancy.ts';
 import { FIGURES } from '../domain/catalog.ts';
 import { assertQuestion, buildReading, cleanQuestion, isKnownContentVersion, type Claim, type ContentVersion, type Evidence, type Question, type Reading } from '../domain/reading.ts';
-import { OUTCOME_STATUSES, type ExportEnvelope, type OutcomeStatus, type ReadingRecord } from '../domain/contracts.ts';
+import { OUTCOME_STATUSES, type AiReading, type ExportEnvelope, type OutcomeStatus, type ReadingRecord } from '../domain/contracts.ts';
+import { isAiReading } from './ai.ts';
 import { NOTES_MAX, OUTCOME_TEXT_MAX, PLAN_ACTION_MAX, isCalendarDate, newId } from './records.ts';
 import type { AppErrorCode } from './errors.ts';
 import type { ArchiveEntry } from './repository.ts';
@@ -121,13 +122,13 @@ function readClaim(v: unknown): Claim {
   return { claimId: claimId as string, ruleId: ruleId as string, kind: kind as Claim['kind'], title: title as string,
     text: text as string, evidence: (evidence as unknown[]).map(readEvidence), sourceIds: [...(sourceIds as string[])] };
 }
-function readReading(v: unknown, version: ContentVersion): Reading {
+function readReading(v: unknown, version: ContentVersion, rule: RuleVersion): Reading {
   if (!isObj(v)) bad('缺少解讀快照');
   const o = v as Obj, claims = own(o, 'claims'), reviewStatus = own(o, 'reviewStatus');
-  if (own(o, 'ruleVersion') !== RULE_VERSION || own(o, 'contentVersion') !== version || own(o, 'scope') !== 'basic-symbolic' ||
+  if (own(o, 'ruleVersion') !== rule || own(o, 'contentVersion') !== version || own(o, 'scope') !== 'basic-symbolic' ||
       (reviewStatus !== 'editorial-draft' && reviewStatus !== 'expert-reviewed')) bad('解讀快照的版本欄位與記錄不一致');
   if (!Array.isArray(claims) || claims.length > 16) bad('解讀段落過多');
-  return { ruleVersion: RULE_VERSION, contentVersion: version, scope: 'basic-symbolic',
+  return { ruleVersion: rule, contentVersion: version, scope: 'basic-symbolic',
     reviewStatus: reviewStatus as Reading['reviewStatus'], claims: (claims as unknown[]).map(readClaim) };
 }
 
@@ -135,7 +136,7 @@ function readReading(v: unknown, version: ContentVersion): Reading {
  * Strict validation for a record that claims the current schema/rule version and a content version this build knows.
  * Returns a freshly built object; throws Reject with a human-readable reason otherwise.
  */
-function readKnownRecord(o: Obj, version: ContentVersion): ReadingRecord {
+function readKnownRecord(o: Obj, version: ContentVersion, rule: RuleVersion): ReadingRecord {
   const id = own(o, 'id'), revision = own(o, 'revision'), createdAt = own(o, 'createdAt'), updatedAt = own(o, 'updatedAt');
   if (typeof id !== 'string' || !UUID.test(id)) bad('記錄 ID 不是 UUID');
   if (!Number.isSafeInteger(revision) || (revision as number) < 0) bad('revision 必須是非負整數');
@@ -155,8 +156,8 @@ function readKnownRecord(o: Obj, version: ContentVersion): ReadingRecord {
     if (toDots(readFigure(own(rawChart as Obj, node), `盤位 ${node}`)) !== toDots(chart[node])) mismatch(`盤位 ${node} 與原始來源不一致`);
   }
   // Known content version => the stored text must be exactly what that version composes, old versions included.
-  const reading = readReading(own(o, 'reading'), version);
-  if (JSON.stringify(reading) !== JSON.stringify(canonicalReading(buildReading(mothers, question, version)))) {
+  const reading = readReading(own(o, 'reading'), version, rule);
+  if (JSON.stringify(reading) !== JSON.stringify(canonicalReading(buildReading(mothers, question, version, rule)))) {
     mismatch('解讀文字或依據與此內容版本不一致');
   }
   const notes = own(o, 'notes');
@@ -166,7 +167,7 @@ function readKnownRecord(o: Obj, version: ContentVersion): ReadingRecord {
   const record: ReadingRecord = {
     schemaVersion: 1, id: id as string, revision: revision as number,
     createdAt: createdAt as string, updatedAt: updatedAt as string,
-    ruleVersion: RULE_VERSION, contentVersion: version,
+    ruleVersion: rule, contentVersion: version,
     question, source, mothers, chart, reading, notes: notes as string, integrity: 'verified',
   };
   const outcome = own(o, 'outcome');
@@ -187,6 +188,15 @@ function readKnownRecord(o: Obj, version: ContentVersion): ReadingRecord {
       bad('預計行動與回顧日期（plan）格式不正確');
     }
     record.plan = { action: action as string, ...(reviewOn === undefined ? {} : { reviewOn: reviewOn as string }), recordedAt: recordedAt as string };
+  }
+  const ai = own(o, 'ai');
+  if (ai !== undefined) {
+    if (!isAiReading(ai)) bad('AI 解讀（ai）格式不正確');
+    // Rebuilt from whitelisted fields only.
+    const a = ai as AiReading;
+    record.ai = { model: a.model, promptVersion: a.promptVersion, sentQuestion: a.sentQuestion,
+      paragraphs: a.paragraphs.map(p => ({ heading: p.heading, text: p.text, cites: [...p.cites] })),
+      usage: { inputTokens: a.usage.inputTokens, outputTokens: a.usage.outputTokens }, recordedAt: a.recordedAt };
   }
   const origin = own(o, 'importOrigin');
   if (origin !== undefined) {
@@ -224,6 +234,9 @@ export function canonicalRecord(r: ReadingRecord): ReadingRecord {
     chart: Object.fromEntries(NODES.map(n => [n, canonicalFigure(r.chart[n])])) as unknown as Chart,
     reading: canonicalReading(r.reading), notes: r.notes,
     ...(r.outcome ? { outcome: { status: r.outcome.status, text: r.outcome.text, recordedAt: r.outcome.recordedAt } } : {}),
+    ...(r.ai ? { ai: { model: r.ai.model, promptVersion: r.ai.promptVersion, sentQuestion: r.ai.sentQuestion,
+      paragraphs: r.ai.paragraphs.map(p => ({ heading: p.heading, text: p.text, cites: [...p.cites] })),
+      usage: { inputTokens: r.ai.usage.inputTokens, outputTokens: r.ai.usage.outputTokens }, recordedAt: r.ai.recordedAt } } : {}),
     ...(r.plan ? { plan: { action: r.plan.action, ...(r.plan.reviewOn === undefined ? {} : { reviewOn: r.plan.reviewOn }), recordedAt: r.plan.recordedAt } } : {}),
     integrity: 'verified',
     ...(r.importOrigin ? { importOrigin: { originalId: r.importOrigin.originalId, importedAt: r.importOrigin.importedAt } } : {}),
@@ -239,11 +252,13 @@ export function checkRecord(raw: unknown): RecordCheck {
   try {
     if (!isObj(raw)) bad('記錄不是物件');
     const o = raw as Obj;
-    const version = own(o, 'contentVersion');
-    if (own(o, 'schemaVersion') !== 1 || own(o, 'ruleVersion') !== RULE_VERSION || !isKnownContentVersion(version)) {
+    const version = own(o, 'contentVersion'), rule = own(o, 'ruleVersion');
+    // Content v1 was only ever written under the sequential rule; any other pairing is not a record this App made.
+    if (own(o, 'schemaVersion') !== 1 || !isRuleVersion(rule) || !isKnownContentVersion(version)
+      || (version === 'zh-TW-basic-draft-v1' && rule !== RULE_VERSION)) {
       throw new Reject('UNSUPPORTED_VERSION', '版本不支援');
     }
-    return { ok: true, record: readKnownRecord(o, version) };
+    return { ok: true, record: readKnownRecord(o, version, rule) };
   } catch (e) {
     if (e instanceof Reject) return { ok: false, code: e.code, reason: e.message };
     return { ok: false, code: 'IMPORT_INVALID', reason: '記錄格式不正確' };

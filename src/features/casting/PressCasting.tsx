@@ -6,8 +6,8 @@ import type { Draft } from '../../domain/contracts.ts';
 import { useApp } from '../../app/AppContext.tsx';
 import { playTap } from '../../app/sound.ts';
 import { buzzConfirm } from '../../app/haptics.ts';
-import { ERROR_TEXT, toAppError, type AppErrorCode } from '../../infrastructure/errors.ts';
-import { ORDINAL, figureOf } from '../../content/labels.ts';
+import { toAppError, type AppErrorCode } from '../../infrastructure/errors.ts';
+import { figureOf } from '../../content/labels.ts';
 import { Dialog } from '../../components/Dialog.tsx';
 import { FigureGlyph } from '../../components/FigureGlyph.tsx';
 
@@ -30,7 +30,7 @@ type Phase = 'ready' | 'holding' | 'saving' | 'review';
  * keeps it until it is saved, and retries with the same byte: a failed save never draws again.
  */
 export function PressCasting({ draft, onReady, onGone }: Props) {
-  const { repo, settings, logEvent } = useApp();
+  const { repo, settings, logEvent, L, T } = useApp();
   const [presses, setPresses] = useState<number[]>(draft.confirmedPresses ?? []);
   const [phase, setPhase] = useState<Phase>('ready');
   const [progress, setProgress] = useState(0);
@@ -99,7 +99,7 @@ export function PressCasting({ draft, onReady, onGone }: Props) {
       setPresses(saved);
       setResumeNotice(false);
       const f = figureOf(pressFigure(byte));
-      setAnnounce(`第${ORDINAL[saved.length - 1]}次長按完成：${f.zh}。進度 ${saved.length}／4。`);
+      setAnnounce(L(`第${T.ORDINAL[saved.length - 1]}次長按完成：${f.zh}。進度 ${saved.length}／4。`, `Press ${saved.length} done: ${T.name(f)}. ${saved.length} of 4.`));
       logEvent('row_confirmed', { method: 'press', rowIndex: saved.length });
       if (next.state === 'ready-to-finalize') { onReady(next); return; }
       setPhase('review');
@@ -118,8 +118,8 @@ export function PressCasting({ draft, onReady, onGone }: Props) {
     if (!current || current.pointerId !== pointerId) return;
     const held = time - current.start;
     stopHold();
-    if (!inside) { setHint('在圓圈裡放開才算：這次沒有算進去。'); return; }
-    if (held < HOLD_MS) { setHint('再按久一點：圓圈填滿後再放開。這次沒有算進去。'); return; }
+    if (!inside) { setHint(L('在圓圈裡放開才算：這次沒有算進去。', 'Release inside the circle: that one did not count.')); return; }
+    if (held < HOLD_MS) { setHint(L('再按久一點：圓圈填滿後再放開。這次沒有算進去。', 'Hold a little longer and release once the circle is full. That one did not count.')); return; }
     if (pending.current === null) {
       try {
         pending.current = drawPressByte();
@@ -137,7 +137,7 @@ export function PressCasting({ draft, onReady, onGone }: Props) {
   const onPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
     if (!event.isPrimary || event.button !== 0) {
       // A second finger while holding cancels the press.
-      if (hold.current) { stopHold(); setHint('一次用一指按住：這次沒有算進去。'); }
+      if (hold.current) { stopHold(); setHint(L('一次用一指按住：這次沒有算進去。', 'Hold with one finger at a time: that one did not count.')); }
       return;
     }
     if (pending.current !== null || error === 'RNG_UNAVAILABLE') return;
@@ -183,37 +183,37 @@ export function PressCasting({ draft, onReady, onGone }: Props) {
   if (error === 'RNG_UNAVAILABLE') {
     return (
       <div className="notice is-error" role="alert">
-        <p>{ERROR_TEXT.RNG_UNAVAILABLE}</p>
-        <p>請放棄這筆草稿，回到新增占問改選其他起卦方式。</p>
-        <Link to="/new">回到新增占問</Link>
+        <p>{T.error('RNG_UNAVAILABLE')}</p>
+        <p>{L('請放棄這筆草稿，回到新增占問改選其他起卦方式。', 'Please discard this draft and choose another casting method on the new-question page.')}</p>
+        <Link to="/new">{L('回到新增占問', 'Back to new question')}</Link>
       </div>
     );
   }
 
   const last = count > 0 ? pressFigure(presses[count - 1]) : null;
-  const label = phase === 'saving' ? '保存中…'
-    : phase === 'holding' ? (progress >= 1 ? '放開' : '按住…')
-    : `第${ORDINAL[Math.min(3, count)]}次`;
+  const label = phase === 'saving' ? L('保存中…', 'Saving…')
+    : phase === 'holding' ? (progress >= 1 ? L('放開', 'Release') : L('按住…', 'Hold…'))
+    : L(`第${T.ORDINAL[Math.min(3, count)]}次`, `Press ${Math.min(3, count) + 1}`);
 
   return (
     <div className="press">
       <p className="cast-progress">
-        <strong>第{ORDINAL[Math.min(3, count)]}母象</strong>
-        <span className="muted">（已完成 {count}／4 次長按）</span>
+        <strong>{T.mother(Math.min(3, count))}</strong>
+        <span className="muted">{L(`（已完成 ${count}／4 次長按）`, ` (${count} of 4 presses done)`)}</span>
       </p>
-      {resumeNotice && <p className="notice" role="status">已保留前 {count} 次長按，從第 {count + 1} 次繼續。</p>}
+      {resumeNotice && <p className="notice" role="status">{L(`已保留前 ${count} 次長按，從第 ${count + 1} 次繼續。`, `The first ${count} presses were kept. Continue with press ${count + 1}.`)}</p>}
 
       {phase === 'review' && last ? (
-        <section className="card mother-review" aria-label="母象回顧">
-          <h2>第{ORDINAL[count - 1]}母象完成</h2>
+        <section className="card mother-review" aria-label={L('母象回顧', 'Mother review')}>
+          <h2>{L(`${T.mother(count - 1)}完成`, `${T.mother(count - 1)} complete`)}</h2>
           <FigureGlyph figure={last} size={64} />
-          <p><strong>{figureOf(last).zh}／{figureOf(last).latin}</strong></p>
-          <p className="muted">已經保存，不能修改。</p>
-          <button type="button" className="primary" onClick={() => setPhase('ready')}>繼續第{ORDINAL[count]}次長按</button>
+          <p><strong>{T.fullName(figureOf(last))}</strong></p>
+          <p className="muted">{L('已經保存，不能修改。', 'Saved; it cannot be changed.')}</p>
+          <button type="button" className="primary" onClick={() => setPhase('ready')}>{L(`繼續第${T.ORDINAL[count]}次長按`, `Continue to press ${count + 1}`)}</button>
         </section>
       ) : (
         <>
-          <p id="press-help" className="hint">按住圓圈，等圓圈填滿後放開。放開的那一刻，裝置亂數決定這個母象；按多久不影響結果。鍵盤可按住空白鍵。</p>
+          <p id="press-help" className="hint">{L('按住圓圈，等圓圈填滿後放開。放開的那一刻，裝置亂數決定這個母象；按多久不影響結果。鍵盤可按住空白鍵。', 'Press and hold the circle, and release once it is full. At the moment you release, device random decides this Mother; how long you hold does not affect it. On a keyboard, hold the space bar.')}</p>
           <div className="press-stage">
             <button type="button" className={`press-pad${phase === 'holding' ? ' is-holding' : ''}${progress >= 1 ? ' is-full' : ''}`}
               aria-describedby="press-help" disabled={phase === 'saving' || error !== null}
@@ -227,29 +227,29 @@ export function PressCasting({ draft, onReady, onGone }: Props) {
                   style={{ strokeDasharray: RING, strokeDashoffset: RING * (1 - progress) }} />
               </svg>
               <span className="press-label">{label}</span>
-              <span className="sr-only">長按起卦，第 {count + 1} 次，共 4 次</span>
+              <span className="sr-only">{L(`長按起卦，第 ${count + 1} 次，共 4 次`, `Long-press cast, press ${count + 1} of 4`)}</span>
             </button>
           </div>
           <p className="hint" role="status">{hint}</p>
           {error && (
             <div className="notice is-error" role="alert">
               <p>{error === 'REVISION_CONFLICT'
-                ? '另一個分頁已更新這筆草稿。這一次長按尚未保存。'
-                : `這一次長按的結果已固定但尚未保存。${ERROR_TEXT[error]}`}</p>
+                ? L('另一個分頁已更新這筆草稿。這一次長按尚未保存。', 'Another tab has updated this draft. This press is not saved.')
+                : L(`這一次長按的結果已固定但尚未保存。${T.error(error)}`, `The result of this press is fixed but not saved. ${T.error(error)}`)}</p>
               {error === 'REVISION_CONFLICT'
-                ? <button type="button" onClick={() => void reloadLatest()}>重新載入最新草稿</button>
-                : <button type="button" onClick={() => void save()}>用同一個結果重試保存</button>}
+                ? <button type="button" onClick={() => void reloadLatest()}>{L('重新載入最新草稿', 'Load the latest draft')}</button>
+                : <button type="button" onClick={() => void save()}>{L('用同一個結果重試保存', 'Retry saving the same result')}</button>}
             </div>
           )}
         </>
       )}
 
       {count > 0 && (
-        <section aria-label="已完成的母象" className="mothers-strip">
+        <section aria-label={L('已完成的母象', 'Completed Mothers')} className="mothers-strip">
           {presses.map((byte, i) => (
             <figure key={i}>
               <FigureGlyph figure={pressFigure(byte)} size={28} />
-              <figcaption>第{ORDINAL[i]}母象</figcaption>
+              <figcaption>{T.mother(i)}</figcaption>
             </figure>
           ))}
         </section>
@@ -257,11 +257,11 @@ export function PressCasting({ draft, onReady, onGone }: Props) {
 
       <p className="sr-only" role="status" aria-live="polite">{announce}</p>
 
-      <Dialog open={blocker.state === 'blocked'} title="這一次長按還沒保存" onClose={() => blocker.reset?.()}>
-        <p>離開後，已保存的長按會保留，但這一次的結果會放棄，回來時要重新長按。</p>
+      <Dialog open={blocker.state === 'blocked'} title={L('這一次長按還沒保存', 'This press is not saved')} onClose={() => blocker.reset?.()}>
+        <p>{L('離開後，已保存的長按會保留，但這一次的結果會放棄，回來時要重新長按。', 'If you leave, saved presses are kept but this result is dropped; you will press again when you come back.')}</p>
         <div className="dialog-actions">
-          <button type="button" className="primary" onClick={() => blocker.reset?.()}>留下來重試保存</button>
-          <button type="button" onClick={() => blocker.proceed?.()}>放棄這一次並離開</button>
+          <button type="button" className="primary" onClick={() => blocker.reset?.()}>{L('留下來重試保存', 'Stay and retry saving')}</button>
+          <button type="button" onClick={() => blocker.proceed?.()}>{L('放棄這一次並離開', 'Drop this press and leave')}</button>
         </div>
       </Dialog>
     </div>

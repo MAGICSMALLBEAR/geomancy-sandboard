@@ -1,10 +1,12 @@
 /** IndexedDB `geomancy-local` v1. See docs/ENGINE-AND-DATA.md §7 for the stores and transaction rules. */
 import { openDB, type DBSchema, type IDBPDatabase, type IDBPTransaction, type StoreNames } from 'idb';
-import type { CastSource } from '../domain/geomancy.ts';
-import type { Question } from '../domain/reading.ts';
-import type { ActionPlan, Draft, Outcome, ReadingRecord } from '../domain/contracts.ts';
+import { isRuleVersion, RULE_VERSION, type CastSource, type RuleVersion } from '../domain/geomancy.ts';
+import type { ContentVersion, Question } from '../domain/reading.ts';
+import type { ActionPlan, AiReading, Draft, Outcome, ReadingRecord } from '../domain/contracts.ts';
+import { AI_MODELS, type AiModel } from './ai.ts';
+import { browserLang, isLang } from '../app/lang.ts';
 import { AppError, toAppError } from './errors.ts';
-import { newDraft, newId, recordFromDraft, withConfirmedPress, withConfirmedRow, withNotes, withOutcome, withPlan, withPreparedSource, type CastMethod } from './records.ts';
+import { newDraft, newId, recordFromDraft, withConfirmedPress, withConfirmedRow, withNotes, withAi, withOutcome, withPlan, withPreparedSource, type CastMethod } from './records.ts';
 import { DEFAULT_SETTINGS, FEEDBACK_EVENT_LIMIT, THEMES, sortNewestFirst, systemClock, trimEvents,
   type ArchiveEntry, type ThemeSetting, type Clock, type FeedbackEntry, type Repository, type Settings } from './repository.ts';
 
@@ -77,11 +79,11 @@ export class IdbRepository implements Repository {
     return this.run(['drafts'], 'readonly', async tx =>
       (await tx.objectStore('drafts').index('updatedAt').getAll()).at(-1) ?? null);
   }
-  createDraft(question: Question, method: CastMethod) {
+  createDraft(question: Question, method: CastMethod, rule: RuleVersion = RULE_VERSION, content?: ContentVersion) {
     return this.run(['drafts'], 'readwrite', async tx => {
       const store = tx.objectStore('drafts');
       if (await store.count() > 0) throw new AppError('DRAFT_EXISTS');
-      const draft = newDraft(newId(), question, method, this.clock());
+      const draft = newDraft(newId(), question, method, this.clock(), rule, content);
       await store.add(draft);
       return draft;
     });
@@ -171,6 +173,16 @@ export class IdbRepository implements Repository {
       return next;
     });
   }
+  saveAi(id: string, expectedRevision: number, ai: AiReading | null) {
+    return this.run(['readings'], 'readwrite', async tx => {
+      const store = tx.objectStore('readings');
+      const current = await store.get(id);
+      if (!current) throw new AppError('NOT_FOUND');
+      const next = withAi(current, expectedRevision, ai, this.clock());
+      await store.put(next);
+      return next;
+    });
+  }
   deleteReading(id: string) {
     return this.run(['readings'], 'readwrite', tx => tx.objectStore('readings').delete(id));
   }
@@ -193,7 +205,11 @@ export class IdbRepository implements Repository {
       const stored = Object.fromEntries((await tx.objectStore('settings').getAll()).map(r => [r.key, r.value]));
       const motion = stored.motion === 'reduce' || stored.motion === 'full' ? stored.motion : DEFAULT_SETTINGS.motion;
       const theme = THEMES.includes(stored.theme as ThemeSetting) ? stored.theme as ThemeSetting : DEFAULT_SETTINGS.theme;
-      return { motion, sound: stored.sound === true, haptics: stored.haptics === true, pilotLogging: stored.pilotLogging === true, theme } satisfies Settings;
+      const houseRule = isRuleVersion(stored.houseRule) ? stored.houseRule : DEFAULT_SETTINGS.houseRule;
+      const aiKey = typeof stored.aiKey === 'string' && stored.aiKey.length <= 512 ? stored.aiKey : '';
+      const aiModel = AI_MODELS.includes(stored.aiModel as AiModel) ? stored.aiModel as AiModel : DEFAULT_SETTINGS.aiModel;
+      return { motion, sound: stored.sound === true, haptics: stored.haptics === true, pilotLogging: stored.pilotLogging === true, theme, houseRule,
+        aiKey, aiModel, language: isLang(stored.language) ? stored.language : browserLang() } satisfies Settings;
     });
   }
   setSetting<K extends keyof Settings>(key: K, value: Settings[K]) {

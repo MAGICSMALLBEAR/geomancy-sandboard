@@ -21,6 +21,36 @@ export const FIGURES = [
   { id: 'cauda-draconis', latin: 'Cauda Draconis', zh: '龍尾', dots: '1112', keywords: ['離開', '結束', '清除'], reflection: '整理需要收尾的事項，留意結束過程中的責任。' },
 ] as const;
 export type FigureId = typeof FIGURES[number]['id'];
+/**
+ * English gloss, keywords and reflection for each figure (DECISIONS D43). Original editorial drafts written
+ * alongside the Chinese ones; NOT expert-reviewed. In English the Latin name leads, as in English geomancy books.
+ */
+export const FIGURES_EN: Record<FigureId, { gloss: string; keywords: readonly string[]; reflection: string }> = {
+  via: { gloss: 'Way', keywords: ['movement', 'change', 'journey'], reflection: 'Which conditions are changing right now? Pick one small step you can adjust first.' },
+  populus: { gloss: 'People', keywords: ['the group', 'receptiveness', 'surroundings'], reflection: "Tell your own view apart from what others expect, then decide what to answer." },
+  'fortuna-major': { gloss: 'Greater Fortune', keywords: ['steady strength', 'accumulation', 'endurance'], reflection: 'Take stock of the abilities you have built up, and choose one you can keep investing in.' },
+  'fortuna-minor': { gloss: 'Lesser Fortune', keywords: ['short-term help', 'opportunity', 'outside aid'], reflection: 'Check what help is available now, and how long it will last.' },
+  acquisitio: { gloss: 'Gain', keywords: ['increase', 'acquiring', 'gathering'], reflection: 'Say clearly what you want more of, and what getting it will cost.' },
+  amissio: { gloss: 'Loss', keywords: ['decrease', 'giving', 'letting go'], reflection: "Sort out what is worth keeping and what you can let go; don't judge yourself only by gains and losses." },
+  conjunctio: { gloss: 'Conjunction', keywords: ['connection', 'meeting', 'joining'], reflection: 'List the people or information you can reach, and what each side needs to exchange.' },
+  carcer: { gloss: 'Prison', keywords: ['restriction', 'fixity', 'boundaries'], reflection: 'Separate the boundaries you need from the limits you can negotiate, then deal with one.' },
+  laetitia: { gloss: 'Joy', keywords: ['rising', 'delight', 'opening'], reflection: 'Notice what makes you want to engage, and check the resources it needs.' },
+  tristitia: { gloss: 'Sorrow', keywords: ['sinking', 'heaviness', 'contraction'], reflection: 'Break the heavy thing into smaller parts, and name the support or rest you need now.' },
+  puer: { gloss: 'Boy', keywords: ['action', 'drive', 'conflict'], reflection: "Before acting, write down your goal and the line you don't want to cross." },
+  puella: { gloss: 'Girl', keywords: ['harmony', 'attraction', 'accord'], reflection: 'Be clear about the relationships you want to keep, and say what you really need.' },
+  albus: { gloss: 'White', keywords: ['clarity', 'caution', 'reason'], reflection: 'Find one missing piece of information before your next choice.' },
+  rubeus: { gloss: 'Red', keywords: ['intensity', 'desire', 'disorder'], reflection: 'Write down the strong feelings first; leave important decisions until you are steadier.' },
+  'caput-draconis': { gloss: 'Head of the Dragon', keywords: ['entering', 'beginning', 'a new stage'], reflection: 'If you are about to start, define the smallest workable first step and what it requires.' },
+  'cauda-draconis': { gloss: 'Tail of the Dragon', keywords: ['leaving', 'ending', 'clearing'], reflection: 'List what needs wrapping up, and mind your responsibilities as it ends.' },
+};
+type FigureEntry = typeof FIGURES[number];
+/** Display name: Chinese name in Chinese, Latin name in English. */
+export const figureName = (f: FigureEntry, lang: 'zh-TW' | 'en') => (lang === 'en' ? f.latin : f.zh);
+/** Name with its other form: 「獲得／Acquisitio」 or "Acquisitio (Gain)". */
+export const figureFullName = (f: FigureEntry, lang: 'zh-TW' | 'en') =>
+  (lang === 'en' ? `${f.latin} (${FIGURES_EN[f.id].gloss})` : `${f.zh}／${f.latin}`);
+export const figureKeywords = (f: FigureEntry, lang: 'zh-TW' | 'en'): readonly string[] => (lang === 'en' ? FIGURES_EN[f.id].keywords : f.keywords);
+export const figureReflection = (f: FigureEntry, lang: 'zh-TW' | 'en') => (lang === 'en' ? FIGURES_EN[f.id].reflection : f.reflection);
 export function figureInfo(figure: Figure) {
   const result = FIGURES.find(f => f.dots === toDots(figure));
   if (!result) throw new Error('UNKNOWN_FIGURE');
@@ -31,6 +61,12 @@ export const HOUSES = [
   '戀愛與創作', '日常工作與照料', '伴侶、合作與對手', '共享資源與失落',
   '遠行與學習', '職位與公共角色', '朋友與支持', '隱藏的限制',
 ] as const;
+export const HOUSES_EN = [
+  'Self and present situation', 'Resources and money', 'Nearby contacts and messages', 'Home and foundations',
+  'Love and creativity', 'Daily work and care', 'Partners, cooperation and opponents', 'Shared resources and loss',
+  'Travel and learning', 'Career and public role', 'Friends and support', 'Hidden limits',
+] as const;
+export const housesFor = (lang: 'zh-TW' | 'en'): readonly string[] => (lang === 'en' ? HOUSES_EN : HOUSES);
 export const CONTENT_PROVENANCE = {
   reviewStatus: 'editorial-draft',
   patternSourceIds: ['G03'],

@@ -5,9 +5,9 @@ import type { Draft } from '../../domain/contracts.ts';
 import { useApp } from '../../app/AppContext.tsx';
 import { playTap } from '../../app/sound.ts';
 import { buzzConfirm, buzzTap } from '../../app/haptics.ts';
-import { ERROR_TEXT, toAppError } from '../../infrastructure/errors.ts';
+import { toAppError } from '../../infrastructure/errors.ts';
 import { ROW_MAX_DOTS } from '../../infrastructure/records.ts';
-import { ORDINAL, ROW_ELEMENT, dotWord, figureOf } from '../../content/labels.ts';
+import { figureOf } from '../../content/labels.ts';
 import { Dialog } from '../../components/Dialog.tsx';
 import { FigureGlyph } from '../../components/FigureGlyph.tsx';
 import { beginTap, judgeRelease, trackTap, type TapCandidate } from './gesture.ts';
@@ -26,7 +26,7 @@ const motherFigure = (counts: number[], index: number): Figure =>
   counts.slice(index * 4, index * 4 + 4).map(n => (n % 2) as Bit) as unknown as Figure;
 
 export function DotsCasting({ draft, onReady, onGone }: Props) {
-  const { repo, settings, reducedMotion, logEvent } = useApp();
+  const { repo, settings, reducedMotion, logEvent, L, T } = useApp();
   const [state, dispatch] = useReducer(dotsReducer, draft, initDots);
   const [resumeNotice, setResumeNotice] = useState(draft.confirmedCounts.length > 0);
   const [lastRow, setLastRow] = useState<{ row: number; count: number } | null>(null);
@@ -106,7 +106,7 @@ export function DotsCasting({ draft, onReady, onGone }: Props) {
     if (verdict === 'ignored') return;
     cancelCandidate();
     if (verdict === 'tap') addDot(() => canvas.current?.addMark(point.x, point.y));
-    else setHint('輕點即可：這次沒有算進去。');
+    else setHint(L('輕點即可：這次沒有算進去。', 'Just tap: that one did not count.'));
   };
   const onPointerAbort = (event: ReactPointerEvent) => {
     if (candidate.current?.pointerId === event.pointerId) cancelCandidate();
@@ -132,7 +132,8 @@ export function DotsCasting({ draft, onReady, onGone }: Props) {
       rows.current = next.confirmedCounts.length;
       setResumeNotice(false);
       setLastRow({ row: rows.current, count: fixed });
-      setAnnounce(`第 ${rows.current} 列完成：${fixed % 2 === 1 ? '奇數' : '偶數'}，記為${dotWord(fixed % 2)}。進度 ${rows.current}／16。`);
+      setAnnounce(L(`第 ${rows.current} 列完成：${T.parity(fixed)}，記為${T.dotWord(fixed % 2)}。進度 ${rows.current}／16。`,
+        `Row ${rows.current} done: ${T.parity(fixed)}, recorded as ${T.dotWord(fixed % 2)}. ${rows.current} of 16.`));
       logEvent('row_confirmed', { method: 'dots', rowIndex: rows.current });
       if (settings.haptics) buzzConfirm();
       dispatch({ type: 'confirm-ok', draft: next });
@@ -182,34 +183,34 @@ export function DotsCasting({ draft, onReady, onGone }: Props) {
   return (
     <div className="dots">
       <p className="cast-progress" aria-live="off">
-        <strong>第{ORDINAL[motherIndex]}母象／第{ORDINAL[rowInMother]}列</strong>
-        <span className="muted">（{ROW_ELEMENT[rowInMother]}行・全部第 {Math.min(16, rowNumber)}／16 列）</span>
+        <strong>{L(`${T.mother(motherIndex)}／第${T.ORDINAL[rowInMother]}列`, `${T.mother(motherIndex)}, row ${rowInMother + 1}`)}</strong>
+        <span className="muted">{L(`（${T.ROW_ELEMENT[rowInMother]}行・全部第 ${Math.min(16, rowNumber)}／16 列）`, ` (${T.ROW_ELEMENT[rowInMother]} line · row ${Math.min(16, rowNumber)} of 16)`)}</span>
       </p>
-      <ol className="row-progress" aria-label={`已完成 ${state.confirmed.length} 列，共 16 列`}>
+      <ol className="row-progress" aria-label={L(`已完成 ${state.confirmed.length} 列，共 16 列`, `${state.confirmed.length} of 16 rows done`)}>
         {Array.from({ length: 16 }, (_, i) => {
           const done = state.confirmed[i];
           return (
             <li key={i} className={`${done !== undefined ? 'is-done' : ''}${i === state.confirmed.length ? ' is-current' : ''}${i % 4 === 3 ? ' ends-mother' : ''}`}>
               <span aria-hidden="true">{done === undefined ? '' : done % 2 === 1 ? '•' : '••'}</span>
-              <span className="sr-only">第 {i + 1} 列：{done === undefined ? (i === state.confirmed.length ? '進行中' : '未開始') : dotWord(done % 2)}</span>
+              <span className="sr-only">{L(`第 ${i + 1} 列：`, `Row ${i + 1}: `)}{done === undefined ? (i === state.confirmed.length ? L('進行中', 'in progress') : L('未開始', 'not started')) : T.dotWord(done % 2)}</span>
             </li>
           );
         })}
       </ol>
 
-      {resumeNotice && <p className="notice" role="status">已保留前 {state.confirmed.length} 列；未確認的一列請重新點沙。</p>}
+      {resumeNotice && <p className="notice" role="status">{L(`已保留前 ${state.confirmed.length} 列；未確認的一列請重新點沙。`, `The first ${state.confirmed.length} rows were kept. Tap the unconfirmed row again.`)}</p>}
 
       {state.phase === 'mother-review' ? (
-        <section className="card mother-review" aria-label="母象回顧">
-          <h2>第{ORDINAL[mothersDone - 1]}母象完成</h2>
+        <section className="card mother-review" aria-label={L('母象回顧', 'Mother review')}>
+          <h2>{L(`${T.mother(mothersDone - 1)}完成`, `${T.mother(mothersDone - 1)} complete`)}</h2>
           <FigureGlyph figure={motherFigure(state.confirmed, mothersDone - 1)} size={64} />
-          <p><strong>{figureOf(motherFigure(state.confirmed, mothersDone - 1)).zh}／{figureOf(motherFigure(state.confirmed, mothersDone - 1)).latin}</strong></p>
-          <p className="muted">這四列的奇偶組成一個母象。已確認的列不能修改。</p>
-          <button type="button" className="primary" onClick={continueAfterMother}>繼續第{ORDINAL[mothersDone]}母象</button>
+          <p><strong>{T.fullName(figureOf(motherFigure(state.confirmed, mothersDone - 1)))}</strong></p>
+          <p className="muted">{L('這四列的奇偶組成一個母象。已確認的列不能修改。', 'The odd or even of these four rows makes one Mother. Confirmed rows cannot be changed.')}</p>
+          <button type="button" className="primary" onClick={continueAfterMother}>{L(`繼續${T.mother(mothersDone)}`, `Continue to the ${T.mother(mothersDone)}`)}</button>
         </section>
       ) : (
         <>
-          <p id="tray-help" className="hint">在沙面上隨意點幾下，不用刻意計數；準備好後按「完成這列」。</p>
+          <p id="tray-help" className="hint">{L('在沙面上隨意點幾下，不用刻意計數；準備好後按「完成這列」。', 'Tap the sand a few times at random; no need to count. When ready, press "Finish this row".')}</p>
           <div ref={tray} className={`sand-tray${collecting ? '' : ' is-locked'}`} aria-describedby="tray-help"
             onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
             onPointerCancel={onPointerAbort} onLostPointerCapture={onPointerAbort}
@@ -217,44 +218,44 @@ export function DotsCasting({ draft, onReady, onGone }: Props) {
             <SandCanvas ref={canvas} reducedMotion={reducedMotion} />
             {state.phase === 'reveal' && lastRow && (
               <div className="tray-overlay">
-                <p>第 {lastRow.row} 列：{lastRow.count} 點，{lastRow.count % 2 === 1 ? '奇數' : '偶數'} → {dotWord(lastRow.count % 2)}</p>
-                <button type="button" className="link-button" onClick={finishReveal}>略過</button>
+                <p>{L(`第 ${lastRow.row} 列：${lastRow.count} 點，${T.parity(lastRow.count)} → ${T.dotWord(lastRow.count % 2)}`, `Row ${lastRow.row}: ${lastRow.count} dots, ${T.parity(lastRow.count)} → ${T.dotWord(lastRow.count % 2)}`)}</p>
+                <button type="button" className="link-button" onClick={finishReveal}>{L('略過', 'Skip')}</button>
               </div>
             )}
-            {state.phase === 'saving' && <div className="tray-overlay"><p>正在保存這一列…</p></div>}
+            {state.phase === 'saving' && <div className="tray-overlay"><p>{L('正在保存這一列…', 'Saving this row…')}</p></div>}
           </div>
           <p className="hint" role="status">{hint}</p>
-          {state.capped && <p className="notice" role="alert">本列已達 {ROW_MAX_DOTS} 點的操作上限。請完成這列，或清空後重新點。</p>}
+          {state.capped && <p className="notice" role="alert">{L(`本列已達 ${ROW_MAX_DOTS} 點的操作上限。請完成這列，或清空後重新點。`, `This row has reached the limit of ${ROW_MAX_DOTS} dots. Finish the row, or clear it and tap again.`)}</p>}
           {state.error && (
             <div className="notice is-error" role="alert">
               <p>{state.error === 'REVISION_CONFLICT'
-                ? '另一個分頁已更新這筆草稿。這一列尚未保存。'
-                : `這一列尚未保存，點數仍保留。${ERROR_TEXT[state.error]}`}</p>
+                ? L('另一個分頁已更新這筆草稿。這一列尚未保存。', 'Another tab has updated this draft. This row is not saved.')
+                : L(`這一列尚未保存，點數仍保留。${T.error(state.error)}`, `This row is not saved; its dots are kept. ${T.error(state.error)}`)}</p>
               {state.error === 'REVISION_CONFLICT'
-                ? <button type="button" onClick={reloadLatest}>重新載入最新草稿</button>
-                : <button type="button" onClick={confirmRow}>用同樣的點數重試</button>}
+                ? <button type="button" onClick={reloadLatest}>{L('重新載入最新草稿', 'Load the latest draft')}</button>
+                : <button type="button" onClick={confirmRow}>{L('用同樣的點數重試', 'Retry with the same dots')}</button>}
             </div>
           )}
           {lastRow && collecting && (
-            <p className="muted">上一列（第 {lastRow.row} 列）：{lastRow.count} 點 → {dotWord(lastRow.count % 2)}</p>
+            <p className="muted">{L(`上一列（第 ${lastRow.row} 列）：${lastRow.count} 點 → ${T.dotWord(lastRow.count % 2)}`, `Previous row (row ${lastRow.row}): ${lastRow.count} dots → ${T.dotWord(lastRow.count % 2)}`)}</p>
           )}
           <div className="action-bar">
             <button type="button" disabled={!collecting}
               onKeyDown={event => { if (event.repeat) event.preventDefault(); }}
-              onClick={() => addDot(() => canvas.current?.addMarkAuto())}>加入一點</button>
-            <button type="button" disabled={!collecting || state.count === 0} onClick={clearRow}>清空本列</button>
-            <button type="button" className="primary" disabled={!canConfirm(state)} onClick={confirmRow}>完成這列</button>
+              onClick={() => addDot(() => canvas.current?.addMarkAuto())}>{L('加入一點', 'Add a dot')}</button>
+            <button type="button" disabled={!collecting || state.count === 0} onClick={clearRow}>{L('清空本列', 'Clear this row')}</button>
+            <button type="button" className="primary" disabled={!canConfirm(state)} onClick={confirmRow}>{L('完成這列', 'Finish this row')}</button>
           </div>
-          {collecting && state.count === 0 && <p className="hint">先在沙面上點至少一下，才能完成這列。</p>}
+          {collecting && state.count === 0 && <p className="hint">{L('先在沙面上點至少一下，才能完成這列。', 'Tap the sand at least once before finishing the row.')}</p>}
         </>
       )}
 
       {mothersDone > 0 && (
-        <section aria-label="已完成的母象" className="mothers-strip">
+        <section aria-label={L('已完成的母象', 'Completed Mothers')} className="mothers-strip">
           {Array.from({ length: mothersDone }, (_, i) => (
             <figure key={i}>
               <FigureGlyph figure={motherFigure(state.confirmed, i)} size={28} />
-              <figcaption>第{ORDINAL[i]}母象</figcaption>
+              <figcaption>{T.mother(i)}</figcaption>
             </figure>
           ))}
         </section>
@@ -262,11 +263,11 @@ export function DotsCasting({ draft, onReady, onGone }: Props) {
 
       <p className="sr-only" role="status" aria-live="polite">{announce}</p>
 
-      <Dialog open={blocker.state === 'blocked'} title="這一列還沒確認" onClose={() => blocker.reset?.()}>
-        <p>離開後，已確認的列會保留，但這一列需要重新點沙。</p>
+      <Dialog open={blocker.state === 'blocked'} title={L('這一列還沒確認', 'This row is not confirmed')} onClose={() => blocker.reset?.()}>
+        <p>{L('離開後，已確認的列會保留，但這一列需要重新點沙。', 'If you leave, confirmed rows are kept but this row will need to be tapped again.')}</p>
         <div className="dialog-actions">
-          <button type="button" className="primary" onClick={() => blocker.reset?.()}>繼續點沙</button>
-          <button type="button" onClick={() => blocker.proceed?.()}>放棄本列並離開</button>
+          <button type="button" className="primary" onClick={() => blocker.reset?.()}>{L('繼續點沙', 'Keep tapping')}</button>
+          <button type="button" onClick={() => blocker.proceed?.()}>{L('放棄本列並離開', 'Drop this row and leave')}</button>
         </div>
       </Dialog>
     </div>

@@ -1,23 +1,27 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { HOUSES } from '../../domain/catalog.ts';
 import { ORIGINAL_TEXT_MAX, type Question } from '../../domain/reading.ts';
 import type { Draft } from '../../domain/contracts.ts';
+import { CONTENT_VERSION } from '../../domain/catalog.ts';
+import { CONTENT_EN1 } from '../../domain/readingEn1.ts';
 import { useApp } from '../../app/AppContext.tsx';
-import { ERROR_TEXT, toAppError, type AppErrorCode } from '../../infrastructure/errors.ts';
+import { toAppError, type AppErrorCode } from '../../infrastructure/errors.ts';
 import { startPilotSession } from '../../infrastructure/feedback.ts';
 import type { CastMethod } from '../../infrastructure/records.ts';
-import { METHOD_LABEL, TOPIC_EXAMPLE, TOPIC_HOUSES, TOPIC_LABEL } from '../../content/labels.ts';
+import type { Pick } from '../../app/lang.ts';
 
 const TEXT_MAX = 500, TIMEFRAME_MAX = 80;
-const TIMEFRAMES = ['未來一個月', '未來三個月'];
-const METHOD_HELP: Record<CastMethod, string> = {
-  dots: '在沙面上點十六列，每列的奇偶決定一點或兩點。最有操作感，約需幾分鐘。',
-  press: '按住沙盤四次，每次放開時由裝置亂數決定一個母象。比點沙快，仍保留一點儀式感。',
-  auto: '不想自己點？按一次，由裝置亂數決定每列落下幾粒沙，再看著沙子自動落下、化約成四個母象。',
-  quick: '按一次，由裝置亂數直接產生四個母象。',
-  manual: '你已經用紙筆或實體沙盤起好卦，直接輸入四個母象。',
-};
+const TIMEFRAMES = [['未來一個月', 'The next month'], ['未來三個月', 'The next three months']] as const;
+const methodHelp = (L: Pick): Record<CastMethod, string> => ({
+  dots: L('在沙面上點十六列，每列的奇偶決定一點或兩點。最有操作感，約需幾分鐘。',
+    'Tap sixteen rows in the sand; odd or even in each row decides one dot or two. The most hands-on way; takes a few minutes.'),
+  press: L('按住沙盤四次，每次放開時由裝置亂數決定一個母象。比點沙快，仍保留一點儀式感。',
+    'Press and hold four times; each release lets device random decide one Mother. Faster than tapping, with a little ritual left.'),
+  auto: L('不想自己點？按一次，由裝置亂數決定每列落下幾粒沙，再看著沙子自動落下、化約成四個母象。',
+    'Rather not tap? Press once: device random decides how many grains fall in each row, then watch the sand fall and reduce to four Mothers.'),
+  quick: L('按一次，由裝置亂數直接產生四個母象。', 'Press once and device random produces the four Mothers directly.'),
+  manual: L('你已經用紙筆或實體沙盤起好卦，直接輸入四個母象。', 'You already cast on paper or real sand: enter the four Mothers directly.'),
+});
 
 /** Small decorative icons for the method cards. */
 function MethodIcon({ method }: { method: CastMethod }) {
@@ -36,7 +40,7 @@ function MethodIcon({ method }: { method: CastMethod }) {
 const questionMarks = (value: string): number => (value.match(/[？?]/g) ?? []).length;
 
 export function NewQuestionPage() {
-  const { repo, logEvent } = useApp();
+  const { repo, logEvent, settings, L, T } = useApp();
   const navigate = useNavigate();
   const [existing, setExisting] = useState<Draft | null | undefined>(undefined);
   const [original, setOriginal] = useState('');
@@ -69,8 +73,8 @@ export function NewQuestionPage() {
     event.preventDefault();
     if (submitting.current) return;
     const found: typeof problems = {};
-    if (text.trim().length < 1) found.text = '請先寫下一個問題。';
-    if (topic !== 'general' && house === null) found.house = '請選擇這個問題要看的宮位。';
+    if (text.trim().length < 1) found.text = L('請先寫下一個問題。', 'Please write a question first.');
+    if (topic !== 'general' && house === null) found.house = L('請選擇這個問題要看的宮位。', 'Please choose the house this question looks at.');
     setProblems(found);
     if (found.text) { textRef.current?.focus(); return; }
     if (found.house) return;
@@ -79,7 +83,7 @@ export function NewQuestionPage() {
     setError(null);
     try {
       const draft = await repo.createDraft({ text: text.trim(), timeframe: timeframe.trim(), topic, targetHouse: topic === 'general' ? null : house,
-        originalText: original.trim() }, method);
+        originalText: original.trim() }, method, settings.houseRule, settings.language === 'en' ? CONTENT_EN1 : CONTENT_VERSION);
       startPilotSession();
       logEvent('session_started');
       logEvent('method_chosen', { method });
@@ -103,75 +107,76 @@ export function NewQuestionPage() {
     }
   };
 
-  if (existing === undefined) return <p role="status">載入中…</p>;
+  if (existing === undefined) return <p role="status">{L('載入中…', 'Loading…')}</p>;
   if (existing) {
     return (
       <section className="card">
-        <h1>你有一筆尚未完成的占問</h1>
+        <h1>{L('你有一筆尚未完成的占問', 'You have an unfinished question')}</h1>
         <p className="question-text">{existing.question.text}</p>
-        <p className="muted">{METHOD_LABEL[existing.method]}
-          {existing.method === 'dots' && `・已確認 ${existing.confirmedCounts.length}／16 列`}
-          {existing.method === 'press' && `・已完成 ${existing.confirmedPresses?.length ?? 0}／4 次`}</p>
-        <p>一次只保留一筆進行中的占問。要繼續它，還是放棄它並開始新的？</p>
+        <p className="muted">{T.METHOD_LABEL[existing.method]}
+          {existing.method === 'dots' && L(`・已確認 ${existing.confirmedCounts.length}／16 列`, ` · ${existing.confirmedCounts.length} of 16 rows confirmed`)}
+          {existing.method === 'press' && L(`・已完成 ${existing.confirmedPresses?.length ?? 0}／4 次`, ` · ${existing.confirmedPresses?.length ?? 0} of 4 presses done`)}</p>
+        <p>{L('一次只保留一筆進行中的占問。要繼續它，還是放棄它並開始新的？', 'Only one question in progress is kept at a time. Continue it, or discard it and start a new one?')}</p>
         <div className="dialog-actions">
-          <Link className="button primary" to={`/cast/${existing.id}`}>繼續這筆占問</Link>
-          <button type="button" className="danger" onClick={() => void discardExisting()}>放棄並新增</button>
+          <Link className="button primary" to={`/cast/${existing.id}`}>{L('繼續這筆占問', 'Continue this question')}</Link>
+          <button type="button" className="danger" onClick={() => void discardExisting()}>{L('放棄並新增', 'Discard and start new')}</button>
         </div>
-        {error && <p className="notice is-error" role="alert">{ERROR_TEXT[error]}</p>}
+        {error && <p className="notice is-error" role="alert">{T.error(error)}</p>}
       </section>
     );
   }
 
+  const METHOD_HELP = methodHelp(L);
   return (
     <form className="new-question" onSubmit={event => void submit(event)} noValidate>
-      <h1 className="page-title">新增占問</h1>
-      <p className="page-lede">靜下心，把想問的事寫清楚。問題越具體，解讀越容易對照。</p>
+      <h1 className="page-title">{L('新增占問', 'New question')}</h1>
+      <p className="page-lede">{L('靜下心，把想問的事寫清楚。問題越具體，解讀越容易對照。', 'Settle down and write clearly what you want to ask. The more specific the question, the easier the reading is to compare against.')}</p>
 
       <details className="card field original-box">
-        <summary>先把心裡的話寫下來（選填）</summary>
-        <p id="original-help" className="hint">想到什麼就寫什麼，不必整理。寫完再從裡面挑出一件事，整理成下方的問題。兩個版本都會保存，日後回顧時可以對照。</p>
-        <textarea id="original" aria-label="心裡的話（選填）" aria-describedby="original-help" rows={4} maxLength={ORIGINAL_TEXT_MAX}
+        <summary>{L('先把心裡的話寫下來（選填）', "First, write what's on your mind (optional)")}</summary>
+        <p id="original-help" className="hint">{L('想到什麼就寫什麼，不必整理。寫完再從裡面挑出一件事，整理成下方的問題。兩個版本都會保存，日後回顧時可以對照。', 'Write whatever comes, without tidying it. Then pick one thing from it and shape it into the question below. Both versions are saved so you can compare them later.')}</p>
+        <textarea id="original" aria-label={L('心裡的話（選填）', "What's on your mind (optional)")} aria-describedby="original-help" rows={4} maxLength={ORIGINAL_TEXT_MAX}
           value={original} onChange={event => setOriginal(event.target.value)} />
-        <p className="muted">還可以輸入 {ORIGINAL_TEXT_MAX - original.length} 字</p>
+        <p className="muted">{L(`還可以輸入 ${ORIGINAL_TEXT_MAX - original.length} 字`, `${ORIGINAL_TEXT_MAX - original.length} characters left`)}</p>
         {questionMarks(original) >= 2 && (
-          <p className="notice" role="status">看起來不只一個問題。地占一次只問一件事，其他的可以之後另開一筆占問。</p>
+          <p className="notice" role="status">{L('看起來不只一個問題。地占一次只問一件事，其他的可以之後另開一筆占問。', 'This looks like more than one question. Geomancy asks one thing at a time; the others can be separate questions later.')}</p>
         )}
         {original.trim() && !text.trim() && (
-          <button type="button" onClick={() => { setText(original.trim().slice(0, TEXT_MAX)); textRef.current?.focus(); }}>帶入下方再修改</button>
+          <button type="button" onClick={() => { setText(original.trim().slice(0, TEXT_MAX)); textRef.current?.focus(); }}>{L('帶入下方再修改', 'Copy it below to edit')}</button>
         )}
         <ul className="focus-tips">
-          <li>只問一件事</li>
-          <li>問自己能觀察或能行動的部分</li>
-          <li>加上時間範圍，例如「未來三個月」</li>
+          <li>{L('只問一件事', 'Ask about one thing only')}</li>
+          <li>{L('問自己能觀察或能行動的部分', 'Ask about what you can observe or act on')}</li>
+          <li>{L('加上時間範圍，例如「未來三個月」', 'Add a time frame, such as "the next three months"')}</li>
         </ul>
       </details>
 
       <div className="field">
-        <label htmlFor="question">你想問什麼？</label>
-        <p id="question-help" className="hint">請聚焦一件事。解讀提供象徵與反思，重要決定仍需實際資訊。例如：「{TOPIC_EXAMPLE[topic]}」</p>
+        <label htmlFor="question">{L('你想問什麼？', 'What do you want to ask?')}</label>
+        <p id="question-help" className="hint">{L(`請聚焦一件事。解讀提供象徵與反思，重要決定仍需實際資訊。例如：「${T.TOPIC_EXAMPLE[topic]}」`, `Focus on one thing. The reading offers symbols and reflection; important decisions still need real information. For example: "${T.TOPIC_EXAMPLE[topic]}"`)}</p>
         <textarea id="question" ref={textRef} rows={4} maxLength={TEXT_MAX} value={text} required
           aria-describedby={`question-help question-count${problems.text ? ' question-error' : ''}`} aria-invalid={Boolean(problems.text)}
           onChange={event => { setText(event.target.value); if (problems.text) setProblems({ ...problems, text: undefined }); }} />
-        <p id="question-count" className="muted">還可以輸入 {TEXT_MAX - text.length} 字</p>
+        <p id="question-count" className="muted">{L(`還可以輸入 ${TEXT_MAX - text.length} 字`, `${TEXT_MAX - text.length} characters left`)}</p>
         {problems.text && <p id="question-error" className="field-error" role="alert">{problems.text}</p>}
       </div>
 
       <div className="field">
-        <label htmlFor="timeframe">時間範圍（選填）</label>
+        <label htmlFor="timeframe">{L('時間範圍（選填）', 'Time frame (optional)')}</label>
         <input id="timeframe" type="text" maxLength={TIMEFRAME_MAX} value={timeframe} onChange={event => setTimeframe(event.target.value)} />
         <div className="chips">
-          {TIMEFRAMES.map(option => <button key={option} type="button" onClick={() => setTimeframe(option)}>{option}</button>)}
-          <button type="button" onClick={() => setTimeframe('')}>清空</button>
+          {TIMEFRAMES.map(([zh, en]) => <button key={zh} type="button" onClick={() => setTimeframe(L(zh, en))}>{L(zh, en)}</button>)}
+          <button type="button" onClick={() => setTimeframe('')}>{L('清空', 'Clear')}</button>
         </div>
       </div>
 
       <fieldset className="field">
-        <legend>主題</legend>
+        <legend>{L('主題', 'Topic')}</legend>
         <div className="choice-row">
-          {(Object.keys(TOPIC_LABEL) as Question['topic'][]).map(option => (
+          {(Object.keys(T.TOPIC_LABEL) as Question['topic'][]).map(option => (
             <label key={option} className="choice">
               <input type="radio" name="topic" checked={topic === option} onChange={() => changeTopic(option)} />
-              <span>{TOPIC_LABEL[option]}</span>
+              <span>{T.TOPIC_LABEL[option]}</span>
             </label>
           ))}
         </div>
@@ -179,14 +184,14 @@ export function NewQuestionPage() {
 
       {topic !== 'general' && (
         <fieldset className="field" aria-describedby={problems.house ? 'house-error' : undefined}>
-          <legend>這個問題要看哪一宮？</legend>
-          <p className="hint">App 不會替你判斷，請自己選最接近的一項。</p>
+          <legend>{L('這個問題要看哪一宮？', 'Which house does this question look at?')}</legend>
+          <p className="hint">{L('App 不會替你判斷，請自己選最接近的一項。', 'The App will not decide this for you; choose the closest one yourself.')}</p>
           <div className="choice-col">
-            {TOPIC_HOUSES[topic].map(option => (
+            {T.TOPIC_HOUSES[topic].map(option => (
               <label key={option.house} className="choice">
                 <input type="radio" name="house" checked={house === option.house}
                   onChange={() => { setHouse(option.house); setProblems({ ...problems, house: undefined }); }} />
-                <span><strong>{option.label}</strong>（第 {option.house} 宮：{HOUSES[option.house - 1]}）</span>
+                <span><strong>{option.label}</strong>{L(`（第 ${option.house} 宮：${T.HOUSES[option.house - 1]}）`, ` (house ${option.house}: ${T.HOUSES[option.house - 1]})`)}</span>
               </label>
             ))}
           </div>
@@ -195,22 +200,23 @@ export function NewQuestionPage() {
       )}
 
       <fieldset className="field">
-        <legend>起卦方式</legend>
+        <legend>{L('起卦方式', 'Casting method')}</legend>
         <div className="method-grid">
           {(['dots', 'press', 'auto', 'quick', 'manual'] as CastMethod[]).map(option => (
             <label key={option} className="choice">
               <input type="radio" name="method" checked={method === option} onChange={() => setMethod(option)} />
               <MethodIcon method={option} />
-              <span><strong>{METHOD_LABEL[option]}</strong><br />{METHOD_HELP[option]}</span>
+              <span><strong>{T.METHOD_LABEL[option]}</strong><br />{METHOD_HELP[option]}</span>
             </label>
           ))}
         </div>
-        {method === 'dots' && <p className="hint">第一次點沙？可以先到<Link to="/learn/try">試畫區</Link>練習，不會保存。</p>}
+        {method === 'dots' && <p className="hint">{L('第一次點沙？可以先到', 'First time tapping? You can practise in the ')}<Link to="/learn/try">{L('試畫區', 'practice tray')}</Link>{L('練習，不會保存。', ' first; nothing is saved.')}</p>}
       </fieldset>
 
-      {error && <p className="notice is-error" role="alert">{ERROR_TEXT[error]}</p>}
-      <p className="hint">按下開始後，問題就會鎖定；要改問題請重新新增一筆占問。</p>
-      <button type="submit" className="primary big">開始起卦</button>
+      {error && <p className="notice is-error" role="alert">{T.error(error)}</p>}
+      <p className="hint">{L('按下開始後，問題就會鎖定；要改問題請重新新增一筆占問。', 'Once you start, the question is locked; to change it, start a new question. ')}
+        {L(`宮位配置：${T.HOUSE_RULE_LABEL[settings.houseRule]}（可在`, `House rule: ${T.HOUSE_RULE_LABEL[settings.houseRule]} (change it in `)}<Link to="/settings">{L('設定', 'Settings')}</Link>{L('更改）。', ').')}</p>
+      <button type="submit" className="primary big">{L('開始起卦', 'Start casting')}</button>
     </form>
   );
 }

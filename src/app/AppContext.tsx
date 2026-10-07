@@ -2,6 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { DEFAULT_SETTINGS, type PilotEvent, type Repository, type Settings } from '../infrastructure/repository.ts';
 import { makePilotEvent, takeSessionLeft } from '../infrastructure/feedback.ts';
 import type { CastMethod } from '../infrastructure/records.ts';
+import { pick, type Lang, type Pick } from './lang.ts';
+import { labelsFor, type Labels } from '../content/labels.ts';
 
 type EventExtra = { method?: CastMethod; rowIndex?: number; errorCode?: string };
 export type AppContextValue = {
@@ -12,6 +14,11 @@ export type AppContextValue = {
   reducedMotion: boolean;
   /** No-op unless the user switched on local pilot logging. */
   logEvent: (name: PilotEvent['name'], extra?: EventExtra) => void;
+  lang: Lang;
+  /** `L('中文', 'English')`: the text for the current interface language. */
+  L: Pick;
+  /** Display tables (position names, labels, figure names, dates) for the current language. */
+  T: Labels;
 };
 
 const Ctx = createContext<AppContextValue | null>(null);
@@ -42,6 +49,13 @@ export function AppProvider({ repo, initialSettings, children }: { repo: Reposit
   useEffect(() => {
     document.documentElement.dataset.theme = settings.theme;
   }, [settings.theme]);
+  const lang = settings.language;
+  const L = useMemo(() => pick(lang), [lang]);
+  const T = useMemo(() => labelsFor(lang), [lang]);
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    document.title = L('地占沙盤', 'Geomancy Sand Tray');
+  }, [lang, L]);
 
   const updateSetting = useCallback(async <K extends keyof Settings>(key: K, value: Settings[K]) => {
     // Settings are display preferences: apply at once, and put the old value back if saving fails.
@@ -70,7 +84,7 @@ export function AppProvider({ repo, initialSettings, children }: { repo: Reposit
     return () => window.removeEventListener('pagehide', onLeave);
   }, [logging, logEvent]);
 
-  const value = useMemo(() => ({ repo, settings, updateSetting, reducedMotion, logEvent }),
-    [repo, settings, updateSetting, reducedMotion, logEvent]);
+  const value = useMemo(() => ({ repo, settings, updateSetting, reducedMotion, logEvent, lang, L, T }),
+    [repo, settings, updateSetting, reducedMotion, logEvent, lang, L, T]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

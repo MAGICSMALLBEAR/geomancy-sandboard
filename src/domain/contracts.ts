@@ -1,5 +1,5 @@
 /** Application contracts. Persistence, migration and import validators are still to be built. */
-import type { CastSource, Chart, Mothers } from './geomancy.ts';
+import type { CastSource, Chart, Mothers, NodeId, RuleVersion } from './geomancy.ts';
 import type { ContentVersion, Question, Reading } from './reading.ts';
 
 export interface ReadingRecord {
@@ -8,7 +8,8 @@ export interface ReadingRecord {
   revision: number;
   createdAt: string;
   updatedAt: string;
-  ruleVersion: 'western-sequential-v1';
+  /** House rule (DECISIONS D41). The shield is the same under every rule. */
+  ruleVersion: RuleVersion;
   contentVersion: ContentVersion;
   question: Question;
   source: CastSource;
@@ -20,6 +21,8 @@ export interface ReadingRecord {
   outcome?: Outcome;
   /** What the user means to do next and when to look back (DECISIONS D37). Optional; older records have none. */
   plan?: ActionPlan;
+  /** An AI retelling the user asked for with their own API key (DECISIONS D42). Optional; kept as returned. */
+  ai?: AiReading;
   integrity: 'verified';
   importOrigin?: { originalId: string; importedAt: string };
 }
@@ -37,6 +40,22 @@ export interface ActionPlan {
   reviewOn?: string;
   recordedAt: string;
 }
+export interface AiParagraph {
+  heading: string;
+  text: string;
+  /** Shield positions the paragraph relies on; checked against the chart when shown. */
+  cites: NodeId[];
+}
+export interface AiReading {
+  /** Model that actually answered (a server-side fallback may differ from the one asked for). */
+  model: string;
+  promptVersion: string;
+  /** Whether the question text was sent. Notes are never sent. */
+  sentQuestion: boolean;
+  paragraphs: AiParagraph[];
+  usage: { inputTokens: number; outputTokens: number };
+  recordedAt: string;
+}
 export interface Draft {
   schemaVersion: 1;
   id: string;
@@ -44,7 +63,8 @@ export interface Draft {
   createdAt: string;
   updatedAt: string;
   question: Question;
-  ruleVersion: 'western-sequential-v1';
+  /** House rule (DECISIONS D41). The shield is the same under every rule. */
+  ruleVersion: RuleVersion;
   contentVersion: ContentVersion;
   method: 'dots' | 'press' | 'auto' | 'quick' | 'manual';
   confirmedCounts: number[];

@@ -1,8 +1,10 @@
 /** Pure draft/record transitions shared by the IndexedDB and in-memory repositories. */
-import { constructChart, pressFigure, sourceToMothers, RULE_VERSION, type CastSource } from '../domain/geomancy.ts';
+import { constructChart, isRuleVersion, pressFigure, sourceToMothers, RULE_VERSION, type CastSource, type RuleVersion } from '../domain/geomancy.ts';
 import { CONTENT_VERSION } from '../domain/catalog.ts';
-import { assertQuestion, buildReading, cleanQuestion, type Question } from '../domain/reading.ts';
-import { OUTCOME_STATUSES, type ActionPlan, type Draft, type Outcome, type ReadingRecord } from '../domain/contracts.ts';
+import { assertQuestion, buildReading, cleanQuestion, type ContentVersion, type Question } from '../domain/reading.ts';
+import { CONTENT_EN1 } from '../domain/readingEn1.ts';
+import { OUTCOME_STATUSES, type ActionPlan, type AiReading, type Draft, type Outcome, type ReadingRecord } from '../domain/contracts.ts';
+import { isAiReading } from './ai.ts';
 import { AppError, toAppError } from './errors.ts';
 
 export const NOTES_MAX = 5000;
@@ -21,13 +23,15 @@ export function newId(): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-export function newDraft(id: string, question: Question, method: CastMethod, now: string): Draft {
+export function newDraft(id: string, question: Question, method: CastMethod, now: string, rule: RuleVersion = RULE_VERSION,
+  content: ContentVersion = CONTENT_VERSION): Draft {
   try { assertQuestion(question); } catch (e) { throw toAppError(e); }
   if (method !== 'dots' && method !== 'press' && method !== 'auto' && method !== 'quick' && method !== 'manual') throw new AppError('INVALID_STATE');
+  if (!isRuleVersion(rule) || (content !== CONTENT_VERSION && content !== CONTENT_EN1)) throw new AppError('INVALID_STATE');
   return {
     schemaVersion: 1, id, revision: 0, createdAt: now, updatedAt: now,
     question: cleanQuestion(question),
-    ruleVersion: RULE_VERSION, contentVersion: CONTENT_VERSION,
+    ruleVersion: rule, contentVersion: content,
     method, confirmedCounts: [], ...(method === 'press' ? { confirmedPresses: [] } : {}), preparedSource: null, state: 'casting',
   };
 }
@@ -84,13 +88,15 @@ export function withPreparedSource(draft: Draft, expectedRevision: number, sourc
 /** Same ID as the draft; the chart and reading are recomputed from the locked source only. */
 export function recordFromDraft(draft: Draft, now: string): ReadingRecord {
   if (draft.state !== 'ready-to-finalize' || !draft.preparedSource) throw new AppError('INVALID_STATE');
+  // Drafts from before 0.12.0 may carry an older Chinese version: new records always use the current one.
+  const content: ContentVersion = draft.contentVersion === CONTENT_EN1 ? CONTENT_EN1 : CONTENT_VERSION;
   try {
     const mothers = sourceToMothers(draft.preparedSource);
     return {
       schemaVersion: 1, id: draft.id, revision: 0, createdAt: now, updatedAt: now,
-      ruleVersion: RULE_VERSION, contentVersion: CONTENT_VERSION,
+      ruleVersion: draft.ruleVersion, contentVersion: content,
       question: draft.question, source: draft.preparedSource, mothers,
-      chart: constructChart(mothers), reading: buildReading(mothers, draft.question),
+      chart: constructChart(mothers), reading: buildReading(mothers, draft.question, content, draft.ruleVersion),
       notes: '', integrity: 'verified',
     };
   } catch (e) { throw toAppError(e); }
@@ -154,4 +160,16 @@ export function isReviewDue(record: ReadingRecord, now: Date): boolean {
   if (record.outcome) return false;
   if (record.plan?.reviewOn) return localDate(now) >= record.plan.reviewOn;
   return now.getTime() - Date.parse(record.createdAt) > REVIEW_AFTER_MS;
+}
+
+/** Store (or with null remove) the AI retelling exactly as returned and checked. Same revision guard as notes. */
+export function withAi(record: ReadingRecord, expectedRevision: number, ai: AiReading | null, now: string): ReadingRecord {
+  if (record.revision !== expectedRevision) throw new AppError('REVISION_CONFLICT');
+  const base = { ...record, revision: record.revision + 1, updatedAt: now };
+  if (ai === null) {
+    delete base.ai;
+    return base;
+  }
+  if (!isAiReading(ai)) throw new AppError('INVALID_STATE');
+  return { ...base, ai: structuredClone(ai) };
 }

@@ -39,7 +39,7 @@ test('十二宮與盤位：十六個位置的來源與十二宮說明', async ({
   await expect(page.locator('.house-guide > li').nth(9)).toContainText('第 10 宮');
   await expect(page.locator('.house-guide > li').nth(9)).toContainText('工作：職位／發展');
   await expect(page.locator('.role-nodes li')).toHaveCount(16);
-  await expect(page.locator('.role-nodes li').nth(8)).toHaveText('第一姪象（N1）＝第一母象＋第二母象・第 9 宮');
+  await expect(page.locator('.role-nodes li').nth(8)).toHaveText('第一姪象（N1）＝第一母象＋第二母象・第 9 宮（Golden Dawn：第 12 宮）');
   await expect(page.locator('.role-nodes li').nth(14)).toHaveText('裁判（J）＝右證人＋左證人・不入宮');
   await noHorizontalOverflow(page);
 });

@@ -1,16 +1,25 @@
 /** Storage boundary. UI state must only advance after these promises resolve. */
-import type { CastSource } from '../domain/geomancy.ts';
-import type { Question } from '../domain/reading.ts';
-import type { ActionPlan, Draft, Outcome, ReadingRecord } from '../domain/contracts.ts';
+import { RULE_VERSION, type CastSource, type RuleVersion } from '../domain/geomancy.ts';
+import type { AiModel } from './ai.ts';
+import type { Lang } from '../app/lang.ts';
+import type { ContentVersion, Question } from '../domain/reading.ts';
+import type { ActionPlan, AiReading, Draft, Outcome, ReadingRecord } from '../domain/contracts.ts';
 import { AppError } from './errors.ts';
-import { newDraft, newId, recordFromDraft, withConfirmedPress, withConfirmedRow, withNotes, withOutcome, withPlan, withPreparedSource, type CastMethod } from './records.ts';
+import { newDraft, newId, recordFromDraft, withConfirmedPress, withConfirmedRow, withNotes, withAi, withOutcome, withPlan, withPreparedSource, type CastMethod } from './records.ts';
 
 export type MotionSetting = 'system' | 'reduce' | 'full';
 /** Visual themes (DECISIONS D23). Display only: never part of a record or an export. */
 export type ThemeSetting = 'sand' | 'manuscript' | 'ritual';
 export const THEMES: readonly ThemeSetting[] = ['sand', 'manuscript', 'ritual'];
-export type Settings = { motion: MotionSetting; sound: boolean; haptics: boolean; pilotLogging: boolean; theme: ThemeSetting };
-export const DEFAULT_SETTINGS: Settings = { motion: 'system', sound: false, haptics: false, pilotLogging: false, theme: 'sand' };
+export type Settings = { motion: MotionSetting; sound: boolean; haptics: boolean; pilotLogging: boolean; theme: ThemeSetting;
+  /** House rule for new casts (DECISIONS D41); existing records keep their own. */
+  houseRule: RuleVersion;
+  /** The user's own Claude API key (DECISIONS D42). Kept in this browser only, never exported. Empty = AI off. */
+  aiKey: string;
+  aiModel: AiModel;
+  /** Interface language (DECISIONS D43). Also decides the language of new records' basic reading. */
+  language: Lang };
+export const DEFAULT_SETTINGS: Settings = { motion: 'system', sound: false, haptics: false, pilotLogging: false, theme: 'sand', houseRule: RULE_VERSION, aiKey: '', aiModel: 'claude-opus-5-5', language: 'zh-TW' };
 
 /** See docs/PILOT.md: no question, notes, counts, figures, record IDs or coordinates. */
 export type PilotEvent = {
@@ -39,7 +48,7 @@ export type ArchiveEntry = {
 export interface Repository {
   readonly mode: 'persistent' | 'memory';
   getActiveDraft(): Promise<Draft | null>;
-  createDraft(question: Question, method: CastMethod): Promise<Draft>;
+  createDraft(question: Question, method: CastMethod, rule?: RuleVersion, content?: ContentVersion): Promise<Draft>;
   loadDraft(id: string): Promise<Draft | null>;
   discardDraft(id: string): Promise<void>;
   confirmRow(id: string, expectedRevision: number, count: number): Promise<Draft>;
@@ -52,6 +61,7 @@ export interface Repository {
   /** null removes the follow-up. */
   saveOutcome(id: string, expectedRevision: number, outcome: Omit<Outcome, 'recordedAt'> | null): Promise<ReadingRecord>;
   savePlan(id: string, expectedRevision: number, plan: Omit<ActionPlan, 'recordedAt'> | null): Promise<ReadingRecord>;
+  saveAi(id: string, expectedRevision: number, ai: AiReading | null): Promise<ReadingRecord>;
   deleteReading(id: string): Promise<void>;
   /** All-or-nothing; never overwrites an existing ID. */
   importBatch(records: ReadingRecord[], archives: ArchiveEntry[]): Promise<void>;
@@ -87,9 +97,9 @@ export class MemoryRepository implements Repository {
     return d;
   }
   async getActiveDraft() { return structuredClone(sortNewestFirst([...this.drafts.values()])[0] ?? null); }
-  async createDraft(question: Question, method: CastMethod) {
+  async createDraft(question: Question, method: CastMethod, rule: RuleVersion = RULE_VERSION, content?: ContentVersion) {
     if (this.drafts.size > 0) throw new AppError('DRAFT_EXISTS');
-    const d = newDraft(newId(), question, method, this.clock());
+    const d = newDraft(newId(), question, method, this.clock(), rule, content);
     this.drafts.set(d.id, d);
     return structuredClone(d);
   }
@@ -138,6 +148,13 @@ export class MemoryRepository implements Repository {
     const current = this.readings.get(id);
     if (!current) throw new AppError('NOT_FOUND');
     const next = withPlan(current, expectedRevision, plan, this.clock());
+    this.readings.set(id, next);
+    return structuredClone(next);
+  }
+  async saveAi(id: string, expectedRevision: number, ai: AiReading | null) {
+    const current = this.readings.get(id);
+    if (!current) throw new AppError('NOT_FOUND');
+    const next = withAi(current, expectedRevision, ai, this.clock());
     this.readings.set(id, next);
     return structuredClone(next);
   }

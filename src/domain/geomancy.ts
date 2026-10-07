@@ -59,9 +59,27 @@ export function constructChart(mothers: Mothers): Chart {
   const RW = xor(N1, N2), LW = xor(N3, N4), J = xor(RW, LW), R = xor(J, M1);
   return { M1, M2, M3, M4, D1, D2, D3, D4, N1, N2, N3, N4, RW, LW, J, R };
 }
-export function houseNode(house: number): NodeId {
+/** Golden Dawn house chart (G02, G13): Mothers to the angular houses from X, Daughters to the succedent, Nieces to the cadent. */
+export const RULE_GOLDEN_DAWN = 'western-golden-dawn-v1' as const;
+export type RuleVersion = typeof RULE_VERSION | typeof RULE_GOLDEN_DAWN;
+export const RULE_VERSIONS: readonly RuleVersion[] = [RULE_VERSION, RULE_GOLDEN_DAWN];
+export const isRuleVersion = (v: unknown): v is RuleVersion => v === RULE_VERSION || v === RULE_GOLDEN_DAWN;
+/** The shield is the same under every rule; only which position fills which house differs. Index = house - 1. */
+const HOUSE_MAPS: Readonly<Record<RuleVersion, readonly NodeId[]>> = {
+  [RULE_VERSION]: HOUSE_NODES,
+  [RULE_GOLDEN_DAWN]: ['M2', 'D2', 'N2', 'M3', 'D3', 'N3', 'M4', 'D4', 'N4', 'M1', 'D1', 'N1'],
+};
+export function houseNodes(rule: RuleVersion = RULE_VERSION): readonly NodeId[] {
+  return HOUSE_MAPS[rule];
+}
+export function houseNode(house: number, rule: RuleVersion = RULE_VERSION): NodeId {
   if (!Number.isInteger(house) || house < 1 || house > 12) throw new Error('INVALID_HOUSE');
-  return HOUSE_NODES[house - 1];
+  return HOUSE_MAPS[rule][house - 1];
+}
+/** House number of a shield position, or null for the witnesses, judge and reconciler. */
+export function houseOf(node: NodeId, rule: RuleVersion = RULE_VERSION): number | null {
+  const index = HOUSE_MAPS[rule].indexOf(node);
+  return index < 0 ? null : index + 1;
 }
 
 export type CastSource =

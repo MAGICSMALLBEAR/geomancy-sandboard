@@ -256,3 +256,15 @@ button.primary:not(:disabled):active, .button.primary:active { transform: transl
 .corr-inline { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .corr-inline li { padding: 2px 10px; border-radius: 999px; border: 1px solid var(--line); font-size: 0.9rem; }
 .corr-inline li.is-different { border-color: var(--ornament); background: color-mix(in srgb, var(--ornament) 14%, transparent); }
+
+/* 0.12.0: AI retelling, settings rows */
+.row-inline { display: flex; gap: 8px; align-items: stretch; margin-bottom: 8px; }
+.row-inline > input { flex: 1; min-width: 0; }
+.mono { font-family: ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace; font-size: 0.9em; }
+.ai-paragraph { border-left: 4px solid var(--accent-soft); padding: 4px 0 4px 12px; margin: 12px 0; }
+.ai-paragraph.has-problem { border-left-color: var(--error); }
+.ai-paragraph h4 { margin: 0 0 4px; }
+.ai-cites { font-size: 0.88rem; }
+.ai-cites .link-button { min-height: 0; padding: 0 2px; }
+.ai-preview { max-height: 40vh; overflow: auto; font-size: 0.8rem; }
+

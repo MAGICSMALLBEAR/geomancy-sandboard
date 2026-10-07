@@ -4,8 +4,7 @@ import type { CastSource } from '../../domain/geomancy.ts';
 import type { Draft } from '../../domain/contracts.ts';
 import { useApp } from '../../app/AppContext.tsx';
 import { setBusy } from '../../app/pwa.ts';
-import { ERROR_TEXT, toAppError, type AppErrorCode } from '../../infrastructure/errors.ts';
-import { METHOD_LABEL } from '../../content/labels.ts';
+import { toAppError, type AppErrorCode } from '../../infrastructure/errors.ts';
 import { Dialog } from '../../components/Dialog.tsx';
 import { DotsCasting } from './DotsCasting.tsx';
 import { QuickCasting } from './QuickCasting.tsx';
@@ -24,7 +23,7 @@ type Final =
 
 export function CastPage() {
   const { id = '' } = useParams();
-  const { repo, logEvent } = useApp();
+  const { repo, logEvent, L, T } = useApp();
   const navigate = useNavigate();
   const [load, setLoad] = useState<Load>({ status: 'loading' });
   const [final, setFinal] = useState<Final>({ status: 'idle' });
@@ -78,17 +77,17 @@ export function CastPage() {
     return () => { alive = false; };
   }, [id, repo, navigate, finalize]);
 
-  if (load.status === 'loading') return <p role="status">載入中…</p>;
+  if (load.status === 'loading') return <p role="status">{L('載入中…', 'Loading…')}</p>;
   if (load.status === 'discarded') return <Navigate to="/new" replace />;
   if (load.status === 'error') {
-    return <div className="notice is-error" role="alert"><p>無法讀取草稿。{ERROR_TEXT[load.code]}</p><Link to="/">回首頁</Link></div>;
+    return <div className="notice is-error" role="alert"><p>{L('無法讀取草稿。', 'Could not read the draft. ')}{T.error(load.code)}</p><Link to="/">{L('回首頁', 'Back to home')}</Link></div>;
   }
   if (load.status === 'missing') {
     return (
       <div className="card">
-        <h1>找不到這筆進行中的占問</h1>
-        <p>它可能已經完成、被放棄，或不在這個瀏覽器裡。</p>
-        <p><Link to="/journal">查看日誌</Link>　<Link to="/new">新增占問</Link></p>
+        <h1>{L('找不到這筆進行中的占問', 'This question in progress was not found')}</h1>
+        <p>{L('它可能已經完成、被放棄，或不在這個瀏覽器裡。', 'It may have been finished or discarded, or it is not in this browser.')}</p>
+        <p><Link to="/journal">{L('查看日誌', 'Open the journal')}</Link>　<Link to="/new">{L('新增占問', 'New question')}</Link></p>
       </div>
     );
   }
@@ -109,15 +108,15 @@ export function CastPage() {
   if (playback) {
     body = <AutoSandShow counts={playback} onDone={() => navigate(`/result/${draft.id}`, { replace: true, state: { animate: true } })} />;
   } else if (final.status === 'working') {
-    body = <p role="status" className="card">正在保存並排盤…</p>;
+    body = <p role="status" className="card">{L('正在保存並排盤…', 'Saving and building the chart…')}</p>;
   } else if (final.status === 'failed') {
     const { code, source } = final;
     body = (
       <div className="notice is-error" role="alert">
-        <h2>尚未保存</h2>
-        <p>{ERROR_TEXT[code]}這一盤的輸入已固定，重試會使用同一份輸入，不會重新取數。</p>
+        <h2>{L('尚未保存', 'Not saved yet')}</h2>
+        <p>{T.error(code)}{L('這一盤的輸入已固定，重試會使用同一份輸入，不會重新取數。', ' The input for this chart is fixed: retrying uses the same input and draws nothing new.')}</p>
         <div className="dialog-actions">
-          <button type="button" className="primary" onClick={() => void finalize(final.draft, source, final.draft.method === 'auto')}>重試保存</button>
+          <button type="button" className="primary" onClick={() => void finalize(final.draft, source, final.draft.method === 'auto')}>{L('重試保存', 'Retry saving')}</button>
           <button type="button" onClick={() => {
             try {
               keepAsPending(final.draft, source);
@@ -125,7 +124,7 @@ export function CastPage() {
             } catch (error) {
               setFinal({ ...final, code: toAppError(error).code });
             }
-          }}>先看暫存結果（未保存）</button>
+          }}>{L('先看暫存結果（未保存）', 'See the unsaved result for now')}</button>
         </div>
       </div>
     );
@@ -144,21 +143,21 @@ export function CastPage() {
   return (
     <div className="cast">
       <header className="cast-head">
-        <p className="eyebrow">{METHOD_LABEL[draft.method]}</p>
+        <p className="eyebrow">{T.METHOD_LABEL[draft.method]}</p>
         <h1 className="question-text">{draft.question.text}</h1>
         {!playback && (
           <p className="cast-links">
-            <Link to="/">暫停，回首頁</Link>
-            <button type="button" className="link-button" onClick={() => setConfirmDiscard(true)}>放棄這筆草稿</button>
+            <Link to="/">{L('暫停，回首頁', 'Pause and go home')}</Link>
+            <button type="button" className="link-button" onClick={() => setConfirmDiscard(true)}>{L('放棄這筆草稿', 'Discard this draft')}</button>
           </p>
         )}
       </header>
       {body}
-      <Dialog open={confirmDiscard} title="放棄這筆草稿？" onClose={() => setConfirmDiscard(false)}>
-        <p>已確認的列與這個問題都會刪除，無法復原。</p>
+      <Dialog open={confirmDiscard} title={L('放棄這筆草稿？', 'Discard this draft?')} onClose={() => setConfirmDiscard(false)}>
+        <p>{L('已確認的列與這個問題都會刪除，無法復原。', 'The confirmed rows and this question will be deleted. This cannot be undone.')}</p>
         <div className="dialog-actions">
-          <button type="button" className="primary" onClick={() => setConfirmDiscard(false)}>保留草稿</button>
-          <button type="button" className="danger" onClick={() => void discard()}>放棄草稿</button>
+          <button type="button" className="primary" onClick={() => setConfirmDiscard(false)}>{L('保留草稿', 'Keep the draft')}</button>
+          <button type="button" className="danger" onClick={() => void discard()}>{L('放棄草稿', 'Discard the draft')}</button>
         </div>
       </Dialog>
     </div>
