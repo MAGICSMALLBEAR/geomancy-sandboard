@@ -81,6 +81,8 @@
   - **英文介面**：頁首一鍵切換，英文瀏覽器首次造訪即為英文。英文記錄的基礎解讀是新的凍結內容版本 `en-basic-draft-v1`。
   - 這批程式在 2026-10-07 前由另一個工作階段寫到一半（英文約完成四成、typecheck 有 8 個錯誤、文件未寫）；本輪補完英文、修正型別、補 WebKit 下 AI 測試會打到真實 API 的問題（service worker 讓 `page.route` 失效，改為在該檔封鎖 worker），並新增英文全頁檢查。
 
+- [x] **專家審校材料（2026-10-08）**：`npm run review-sheet` 從程式產生 [docs/review/](docs/review/)：`expert-review.csv`（134 列可單獨審的詞句，右側六欄給審校者填結果、建議文字、來源、理由、審校者、日期，符合 SPEC §9）與 `samples.md`（9 張盤的完整基礎與進階解讀，涵蓋四種成事、不成事、停止盤、關係、一般反思）。審校本身尚未開始。
+
 ## 測試網址
 
 **https://magicsmallbear.github.io/geomancy-sandboard/**（GitHub Pages，原始碼 [MAGICSMALLBEAR/geomancy-sandboard](https://github.com/MAGICSMALLBEAR/geomancy-sandboard)，見 DECISIONS D20）。

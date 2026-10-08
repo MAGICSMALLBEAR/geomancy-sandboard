@@ -18,7 +18,8 @@
     "preview": "vite preview",
     "deploy": "npm run build && node scripts/deploy.mjs",
     "icons": "node scripts/make-icons.mjs",
-    "demo": "node tests/demo.mjs"
+    "demo": "node tests/demo.mjs",
+    "review-sheet": "node scripts/review-sheet.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",

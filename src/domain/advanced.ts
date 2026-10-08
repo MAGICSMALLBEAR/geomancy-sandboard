@@ -473,3 +473,6 @@ export function buildAdvancedReading(chart: Chart, question: Question, rule: Rul
     halted: haltedChart(chart, rule, lang),
   };
 }
+
+/** The Chinese wording tables, for the expert review sheet (scripts/review-sheet.ts). Read-only. */
+export const REVIEW_TEXT = { IN_HOUSE, HOUSE_PROMPT, ASPECT_TEXT } as const;
