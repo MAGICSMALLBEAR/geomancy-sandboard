@@ -18,10 +18,16 @@ export function JournalPage() {
   const [error, setError] = useState<AppErrorCode | null>(null);
   const [topic, setTopic] = useState<Question['topic'] | 'all'>('all');
   const [search, setSearch] = useState('');
-  const [params] = useSearchParams();
-  const [review, setReview] = useState<OutcomeStatus | 'all' | 'pending' | 'due'>(() => {
-    const wanted = params.get('review');
-    return wanted === 'pending' || wanted === 'due' ? wanted : 'all';
+  const [params, setParams] = useSearchParams();
+  // Derive from the route so reminder links, navigation and browser history stay in sync.
+  const wanted = params.get('review');
+  const review = wanted === 'pending' || wanted === 'due' || OUTCOME_STATUSES.includes(wanted as OutcomeStatus)
+    ? wanted! : 'all';
+  const setReview = (value: string) => setParams(current => {
+    const next = new URLSearchParams(current);
+    if (value === 'all') next.delete('review');
+    else next.set('review', value);
+    return next;
   });
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
   const [deleting, setDeleting] = useState<ReadingRecord | null>(null);
@@ -88,7 +94,7 @@ export function JournalPage() {
           </select>
         </label>
         <label>{L('後來怎樣了', 'What happened afterwards')}
-          <select value={review} onChange={event => setReview(event.target.value as typeof review)}>
+          <select value={review} onChange={event => setReview(event.target.value)}>
             <option value="all">{L('全部', 'All')}</option>
             <option value="pending">{L('尚未寫回顧', 'Not looked back on yet')}</option>
             <option value="due">{L('到了回顧的時候', 'Due for a look back')}</option>

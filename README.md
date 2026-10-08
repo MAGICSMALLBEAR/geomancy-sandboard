@@ -1,12 +1,12 @@
 # 地占沙盤
 
-版本 0.12.0（測試版） · 2026-10-07 · 繁體中文／English · React＋TypeScript＋Vite 的本機優先 PWA
+版本 0.12.0（測試版） · 2026-10-08 · 繁體中文／English · React＋TypeScript＋Vite 的本機優先 PWA
 
 **第一版 App 已可在電腦瀏覽器試用：提問（保留原句與整理後的問題）、五種起卦、起卦前的試畫區、盾盤與十二宮圓盤、附依據的基礎象徵解讀與進階解讀（成事、相位、象的重現、點之道等，草稿）、學習區、日誌與事後回顧、古典禁例、行星／星座／元素對照、三種可自選的外觀主題、可選的震動回饋、JSON 備份匯入、離線；0.12.0 加入分享連結、Golden Dawn 入宮、自備金鑰的 AI 轉述（選用）與英文介面。** 自動測試全部通過；測試網址 https://magicsmallbear.github.io/geomancy-sandboard/ 已上線（GitHub Pages），iPhone／Android 真機、Safari 與讀屏尚未實測。實際狀態以 [STATUS.md](STATUS.md) 為準。
 
 ## 第一版做什麼
 
-使用者寫下一個問題，選擇十六列點沙、快速起卦或手動四母象，觀看盾盤形成，閱讀附有盤位依據的基礎象徵解讀，結果自動存成日誌。整個核心流程能在首次成功快取後離線使用。同一個網址支援手機與電腦；記錄保存在各自裝置的瀏覽器，跨裝置要靠匯出／匯入。
+使用者寫下一個問題，選擇十六列點沙、四次長按、自動點沙、快速起卦或手動四母象，觀看盾盤形成，閱讀附有盤位依據的基礎象徵解讀，結果自動存成日誌。整個核心流程能在首次成功快取後離線使用。同一個網址支援手機與電腦；記錄保存在各自裝置的瀏覽器，跨裝置要靠匯出／匯入。
 
 試用時先測三件事：使用者能否自行完成、是否喜歡點沙操作、是否能理解解讀的依據。付費、會員與雲端同步，等試用結果再排序；AI 轉述與 Golden Dawn 入宮已在 0.12.0 以選用功能加入。
 
@@ -33,6 +33,8 @@ npm run test:e2e   # Playwright：對 production build 跑 P01–P05 等流程
 ```
 
 第一次跑 `test:e2e` 前要先 `npx playwright install chromium`。要在 Firefox 與 WebKit 也跑，先 `npx playwright install firefox webkit`，再執行 `PW_ENGINES=1 npx playwright test`（PowerShell：`$env:PW_ENGINES=1; npx playwright test`）。
+
+Windows PowerShell 若阻擋 `npm.ps1`，使用 `npm.cmd`／`npx.cmd` 執行相同命令即可。端到端測試會重新建置，並自行啟動、關閉 `http://localhost:4183/` 的專用預覽；若連接埠已佔用會報錯，不會沿用舊伺服器。一般手動預覽仍使用 4173。
 
 要在手機上完整試用（含離線與安裝），需要把 `dist/` 放到 HTTPS 網址；用區網 IP 的 http 開啟時沒有離線與安裝功能。真機檢查表見 [docs/DEVICE-CHECKLIST.md](docs/DEVICE-CHECKLIST.md)。
 
@@ -69,9 +71,11 @@ tests/core.test.mjs  Node 核心測試      tests/unit/  Vitest      tests/e2e/ 
 
 | 已完成並有自動測試 | 尚未完成或尚未驗證 |
 |---|---|
-| 排盤運算、三種起卦來源、逐列保存與恢復 | iPhone／Android 真機、Safari、Firefox |
+| 排盤運算、五種起卦來源、逐列保存與恢復 | iPhone／Android 真機、macOS Safari |
 | 盾盤、十二宮、附依據的基礎解讀、日誌與筆記 | 讀屏與 200% 縮放的人工檢查 |
 | 匯出、匯入驗證、衝突與封存、暫存模式 | 地占專家對中文解讀的逐條審校 |
-| PWA 離線（Chromium／Edge 桌面） | 使用者試用（M6）、公開部署 |
+| PWA 離線與瀏覽器流程（Chromium／Edge／Firefox／Playwright WebKit） | 使用者試用（M6）、真實 AI API、英文文案審閱 |
+
+日誌回顧篩選已修正為隨網址與上一頁／下一頁同步（2026-10-08，已部署）。
 
 程式運算通過測試，不代表解讀已經過專家審核或證實能預測現實事件。解讀內容標示為 `editorial-draft`，畫面如實顯示「基礎象徵解讀・內容草稿」，不可自行升格為完整傳統斷事。

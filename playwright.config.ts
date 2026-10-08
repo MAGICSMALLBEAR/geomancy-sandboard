@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
 // E2E always runs against the production build: service worker and offline only exist there.
+// Own the server so an older preview cannot silently bypass the build and test stale code.
+const port = 4183;
 export default defineConfig({
   testDir: 'tests/e2e',
   timeout: 90_000,
@@ -8,7 +10,7 @@ export default defineConfig({
   workers: 4,
   reporter: [['list']],
   use: {
-    baseURL: 'http://localhost:4173/',
+    baseURL: `http://localhost:${port}/`,
     locale: 'zh-TW',
     trace: 'retain-on-failure',
   },
@@ -26,9 +28,9 @@ export default defineConfig({
       : []),
   ],
   webServer: {
-    command: 'npm run build && npm run preview',
-    url: 'http://localhost:4173/',
-    reuseExistingServer: true,
+    command: `npm run build && npm run preview -- --port ${port} --strictPort`,
+    url: `http://localhost:${port}/`,
+    reuseExistingServer: false,
     timeout: 180_000,
   },
 });

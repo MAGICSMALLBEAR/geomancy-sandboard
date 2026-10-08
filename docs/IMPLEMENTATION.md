@@ -80,7 +80,7 @@ index.html / vite.config.ts / tsconfig*.json
 
 既有 domain 使用 `.ts` 副檔名 import，方便 Node 原生執行。Vite／TS 設定使用 `moduleResolution:'bundler'`、`noEmit:true`、`allowImportingTsExtensions:true`，以實際安裝版 TypeScript 校驗。程式不使用需轉譯的 enum／parameter properties。若開啟更嚴格索引檢查，先修型別，不應停用 strict 掩蓋問題。
 
-下一階段應建立以下命令；只有 `test:core`、`test`、`demo` 在本包已存在：
+M0–M5 已建立以下命令；實際執行結果見 `STATUS.md`：
 
 ```text
 npm run dev          Vite 開發伺服器
@@ -94,6 +94,8 @@ npm run preview      預覽 production build
 ```
 
 Vitest 不要自動收進 Node 的 `.test.mjs`；兩種 runner 各跑自己的目錄。測試共用教學 fixture，不複製另一份可能不同的期望結果。
+
+端到端測試專用預覽為 `http://localhost:4183/`，每次重新建置，`reuseExistingServer: false`；連接埠被佔用時中止，不能借用不明版本的預覽。一般手動 `npm run preview` 保持 4173。Windows PowerShell 若限制 `.ps1`，改用 `npm.cmd`／`npx.cmd` 執行。
 
 ## 4. 操作與交易的先後順序
 
